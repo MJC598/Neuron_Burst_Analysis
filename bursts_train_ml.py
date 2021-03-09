@@ -72,34 +72,77 @@ class baselineGRU(nn.Module):
 
         return out
 
-def get_data_from_mat(file_path):
+def get_data_from_mat(file_path, type='pre_pn'):
     data = scipy.io.loadmat(file_path)
-    print(data['info_collect'].shape)
-    print(data['info_collect'][0])
+    #print(data['info_collect'].shape)
+    #print(data['info_collect'][1])
     duration = []
     amp = []
     pre_pn = []
     pre_itn = []
     pre_aff = []
-    for i in range(1, data['info_collect'].shape[1]):
-        # print(data['info_collect'][i].shape)
+    pre_point_exc = []
+    pre_point_inh = []
+
+    #print(data['info_collect'].shape[0])
+
+    for i in range(1, data['info_collect'].shape[0]):
         duration.append(data['info_collect'][i][0])
         amp.append(data['info_collect'][i][1])
         pre_pn.append(data['info_collect'][i][2])
         pre_itn.append(data['info_collect'][i][3])
         pre_aff.append(data['info_collect'][i][4])
-    duration = np.hstack(duration)
-    amp = np.hstack(amp)
-    pre_pn = np.hstack(pre_pn)
-    pre_itn = np.hstack(pre_itn)
-    pre_aff = np.hstack(pre_aff)
+        pre_point_exc.append(data['info_collect'][i][5])
+        pre_point_inh.append(data['info_collect'][i][6])
+
+    '''
+    duration = np.array(duration)
+    amp = np.array(amp)
+    pre_pn = np.array(pre_pn)
+    pre_itn = np.array(pre_itn)
+    pre_aff = np.array(pre_aff)
+    pre_point_exc = np.array(pre_point_exc)
+    pre_point_inh = np.array(pre_point_inh)
+    '''
+
+    training_data = []
+    testing_data = []
+    training_labels = []
+    testing_labels = []
+    random.seed(10)
+    full = range(5446)
+    training_indices = random.sample(full, k=4981)
+    for i in full:
+        if i in training_indices:
+            training_data.append([pre_pn[i], pre_itn[i], pre_aff[i], pre_point_exc[i], pre_point_inh[i]])
+            training_labels.append(amp[i]) #duration[i]
+        else:
+            testing_data.append([pre_pn[i], pre_itn[i], pre_aff[i], pre_point_exc[i], pre_point_inh[i]])
+            testing_labels.append(amp[i]) #duration[i]
+
 
     #TODO
-
     """
     This needs to still determine the random split between training and validation along with input/output
     """
-    return 0, 0
+    training_data = np.squeeze(np.array(training_data))
+    training_labels = np.array(training_labels, dtype=np.single)
+    training_labels = training_labels.reshape((training_labels.shape[0], 1))
+    print(training_data.shape)
+    # print(training_labels)
+    print(training_labels.shape)
+
+    testing_data = np.squeeze(np.array(testing_data))
+    testing_labels = np.array(testing_labels,dtype=np.single)
+    testing_labels = testing_labels.reshape((testing_labels.shape[0], 1))
+    print(testing_data.shape)
+    print(testing_labels.shape)
+
+    training_dataset = TensorDataset(torch.Tensor(training_data), torch.Tensor(training_labels))
+    testing_dataset = TensorDataset(torch.Tensor(testing_data), torch.Tensor(testing_labels))
+
+    return training_dataset, testing_dataset
+
 
 """
 Training Method
@@ -129,7 +172,7 @@ def train_model(model,save_filepath,training_loader,validation_loader):
     Loss function is set to Mean Squared Error. If you switch to a classifier I'd recommend switching the loss function to
     nn.CrossEntropyLoss(), but this is also something that can be changed if you feel a better loss function would work
     """
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.001)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.01)
     loss_func = nn.MSELoss()
 
     total_start = time.time()
@@ -154,7 +197,9 @@ def train_model(model,save_filepath,training_loader,validation_loader):
                 # So I had to fix it here, it will come back later with another permute
                 x = x.permute(0, 2, 1)
                 output = model(x)
-                #Computing loss                              
+                #Computing loss  
+                # print(output)
+                # print(y)                            
                 loss = loss_func(torch.squeeze(output), torch.squeeze(y))  
                 #backprop             
                 optimizer.zero_grad()           
@@ -195,7 +240,7 @@ def train_model(model,save_filepath,training_loader,validation_loader):
         }
     )
     # Writing loss csv, change path to whatever you want to name it
-    loss_df.to_csv('losses_csv.csv', index=None)
+    loss_df.to_csv('losses_gru_csv.csv', index=None)
 
 """
 General R2 Scoring
@@ -214,25 +259,31 @@ def r2_score_eval(model, testing_dataloader):
         labels_list.append(y.detach().cpu().numpy())
     output_list = np.hstack(output_list)
     labels_list = np.hstack(labels_list)
-    print(r2_score(labels_list, output_list))
+    print(output_list.shape)
+    print(np.squeeze(labels_list).shape)
+    print(r2_score(np.squeeze(labels_list), output_list))
 
 if __name__ == "__main__":
-    input_size = 25
-    hidden_size = 251
+    input_size = 5
+    hidden_size = 50
     batch_first = True
-    batch_size = 32
+    batch_size = 1
     model = baselineLSTM(input_size,hidden_size,batch_size,batch_first,0)
     # model = baselineGRU(input_size,hidden_size,batch_size,batch_first,0)
     # model = baselineRNN(input_size,hidden_size,batch_size,batch_first)
-    training_dataset, validation_dataset = get_data_from_mat('info_collect_for_NN_network.mat') #retrieve data function
+    training_dataset, validation_dataset = get_data_from_mat('data/new_bursts.mat') #retrieve data function
 
+    
     # Turn datasets into iterable dataloaders
     training_loader = DataLoader(dataset=training_dataset,batch_size=batch_size,shuffle=True)
     validation_loader = DataLoader(dataset=validation_dataset,batch_size=batch_size)
 
-    PATH = 'baselineLSTM.pth'
+    
+    PATH = 'baselineGRU.pth'
     train_model(model,PATH,training_loader,validation_loader)
     model = torch.load(PATH)
     model.eval()
     r2_score_eval(model, training_loader)
     r2_score_eval(model, validation_loader)
+    
+    

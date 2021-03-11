@@ -4,7 +4,7 @@ astunparse==1.6.3
 async-generator==1.10
 attrs==20.2.0
 backcall==0.2.0
-bleach==3.2.1
+bleach==3.3.0
 bmtk==0.0.8
 cachetools==4.1.1
 certifi==2020.6.20
@@ -104,6 +104,7 @@ tifffile==2020.10.1
 torch==1.7.0
 torchvision==0.8.1
 tornado==6.0.4
+tqdm==4.59.0
 traitlets==5.0.5
 typing-extensions==3.7.4.3
 typish==1.9.1

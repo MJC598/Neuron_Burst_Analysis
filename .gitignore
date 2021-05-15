@@ -1,5 +1,7 @@
 *.zip
 # *.mat
+docs/
+internal loop/
 
 .ipynb_checkpoints
 

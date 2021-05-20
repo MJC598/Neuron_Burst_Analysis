@@ -3,6 +3,8 @@
 docs/
 internal loop/
 
+graphs/
+
 .ipynb_checkpoints
 
 *.pt

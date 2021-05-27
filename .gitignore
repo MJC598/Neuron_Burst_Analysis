@@ -3,6 +3,8 @@
 docs/
 internal loop/
 
+data/
+
 graphs/
 
 .ipynb_checkpoints

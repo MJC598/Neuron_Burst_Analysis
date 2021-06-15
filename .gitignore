@@ -2,6 +2,7 @@
 # *.mat
 docs/
 internal loop/
+.vscode/
 
 data/
 

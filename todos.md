@@ -33,3 +33,11 @@
 
 ## Coefficients
 
+## Pre-processing
+* Random sample - 1D filter values after current time (Red Curve)
+
+## Next Steps
+* Deep Interpolation on raw data
+* Model with new pre-processing
+* Hilbert Transform Analytics
+* Test on Real Recording

@@ -19,17 +19,26 @@ def get_burst_data(in_file=DEFAULT_RAW_FILE, out_file=DEFAULT_LABELS_FILE):
     hilb = np.abs(signal.hilbert(lfp_out)) #hilbert transform of raw data
 
     z_score = stats.zscore(hilb)
-    thresh = 2*z_score #mean of hilb + 2*stddev of hilb
-    print(thresh.shape)
+    thresh = np.mean(np.squeeze(hilb)) + 2*np.std(np.squeeze(hilb)) # 2*z_score
+#     print(np.mean(np.squeeze(hilb)))
+#     print(2*np.std(np.squeeze(hilb)))
+    print(thresh)
 
-    indices = np.transpose((np.squeeze(hilb)>np.squeeze(thresh)).nonzero())
+    print(hilb.shape)
+    indices = np.nonzero(np.squeeze(hilb)>thresh)[0]
+    print(indices.shape)
 
     burst_indices = []
     temp_idx = []
     #start at the second index and compare to first one
-    for i, idx in enumerate(indices[1:,0], 0):
+    for i, idx in enumerate(indices[1:], 0):
         #if the index is not next start a new sample
-        if idx - indices[i, 0] != 1:
+        if idx - indices[i] != 1:
+            if len(temp_idx) < 71:
+                padding = 71 - len(temp_idx)
+                for i in range(temp_idx[-1]+1,temp_idx[-1]+padding,1):
+                    temp_idx[:0] = [i]
+#             print(np.array(temp_idx).reshape((-1,1)).shape)
             burst_indices.append(np.array(temp_idx).reshape((-1,1)))
             temp_idx = []
             temp_idx.append(idx)
@@ -41,11 +50,17 @@ def get_burst_data(in_file=DEFAULT_RAW_FILE, out_file=DEFAULT_LABELS_FILE):
     burst_in = []
     burst_out = []
     for sample in burst_indices:
-        if sample.shape[0] > 10:
-            # print(sample.shape)
-            burst_in.append(np.take(lfp_in, np.squeeze(sample)))
-            burst_out.append(np.take(lfp_out, np.squeeze(sample)))
-    print(len(burst_in))
-    print(len(burst_out))
+#         print(sample.shape)
+        if sample.shape[0] >= 10:
+            inp = np.take(lfp_in, np.squeeze(sample[:50])).reshape((-1,1))
+            # print(inp.shape)
+            lab = np.take(lfp_out, np.squeeze(sample[-1])).reshape((-1,1))
+            # print(lab.shape)
+            burst_in.append(inp)
+            burst_out.append(lab)
+    burst_in = np.transpose(np.stack(burst_in), (0,2,1))
+    burst_out = np.transpose(np.stack(burst_out), (0,2,1))
+    print(burst_in.shape)
+    print(burst_out.shape)
 
 get_burst_data()

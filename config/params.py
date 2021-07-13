@@ -1,0 +1,19 @@
+import os, sys
+sys.path.append(os.path.split(sys.path[0])[0])
+from models import LFPNet
+
+PREVIOUS_TIME = 50
+LOOK_AHEAD = 50
+INPUT_FEATURES = 1
+OUTPUT_SIZE = 1
+INPUT_SIZE = INPUT_FEATURES * PREVIOUS_TIME
+HIDDEN_SIZE = 95
+BATCH_SIZE = 512
+BATCH_FIRST = True
+DROPOUT = 0.0
+EPOCHS = 20
+MODEL = LFPNet.FCN
+MODEL_NAME = 'FCN'
+OUTPUT = 'FilteredLFP'
+INPUT = 'RawLFP'
+RECURRENT_NET = False

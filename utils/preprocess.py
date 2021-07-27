@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.random import default_rng
-from scipy import signal
+from scipy import signal, stats
 import torch
 from torch.utils.data import TensorDataset
 import sys
@@ -205,9 +205,18 @@ def get_rawLFP():
         aff = f.read().splitlines()
     aff = np.array([(float(x.split(',')[0]), float(x.split(',')[1])) for x in aff])
         
-#     full_data = np.hstack((lfp_in, fr))
+    lfp_in = lfp_in[:,0]
+    fr = fr[:,0]
+    # lfp_in += 1 + (-1*min(lfp_in))
+    # lfp_in, _ = stats.boxcox(lfp_in)
+    # lfp_in = np.diff(lfp_in, n=1, axis=0)
+    # fr = np.diff(fr, n=1, axis=0)
+    lfp_in = lfp_in.reshape((-1,1))
+    fr = fr.reshape((-1,1))
+    # full_data = np.concatenate((lfp_in, fr), axis=1)
+    # print(full_data.shape)
     full_data = lfp_in
-    full_labels = lfp_out
+    full_labels = lfp_in
     
     training_samples = 900000
     indices = RNG.integers(low=0, high=full_labels.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD), size=training_samples)
@@ -221,35 +230,40 @@ def get_rawLFP():
     f_labels = []
     
     for idx in indices:
-        training_data.append(full_data[idx:idx+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME*params.INPUT_FEATURES)))
-        training_labels.append(full_labels[idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        training_data.append(full_data[idx:idx+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME)))
+        training_labels.append(full_labels[idx+params.PREVIOUS_TIME:idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        # training_labels.append(full_labels[idx+params.LOOK_AHEAD:idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        # training_labels.append(full_labels[idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
     training_data = np.stack(training_data, axis=0)
     training_labels = np.stack(training_labels, axis=0)
     
     for idx in v_indices:
-        validation_data.append(full_data[idx:idx+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME*params.INPUT_FEATURES)))
-        validation_labels.append(full_labels[idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        validation_data.append(full_data[idx:idx+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME)))
+        validation_labels.append(full_labels[idx+params.PREVIOUS_TIME:idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        # validation_labels.append(full_labels[idx+params.LOOK_AHEAD:idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+        # validation_labels.append(full_labels[idx+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
     validation_data = np.stack(validation_data, axis=0)
     validation_labels = np.stack(validation_labels, axis=0)
     
-    for i in range(full_data.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD)):
-        f_data.append(full_data[i:i+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME*params.INPUT_FEATURES)))
-        f_labels.append(full_labels[i+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
-    f_data = np.stack(f_data, axis=0)
-    f_labels = np.stack(f_labels, axis=0)
+    # for i in range(full_data.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD)):
+    #     f_data.append(full_data[i:i+params.PREVIOUS_TIME,:].reshape((-1,params.PREVIOUS_TIME*params.INPUT_FEATURES)))
+    #     f_labels.append(full_labels[i+params.LOOK_AHEAD:i+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+    #     # f_labels.append(full_labels[i+params.PREVIOUS_TIME+params.LOOK_AHEAD,:].reshape((-1,params.OUTPUT_SIZE)))
+    # f_data = np.stack(f_data, axis=0)
+    # f_labels = np.stack(f_labels, axis=0)
     
     print('Training Data: {}'.format(training_data.shape))
     print('Training Labels: {}'.format(training_labels.shape))
     print('Validation Data: {}'.format(validation_data.shape))
     print('Validation Labels: {}'.format(validation_labels.shape))
-    print('Full Data: {}'.format(f_data.shape))
-    print('Full Labels: {}'.format(f_labels.shape))
+    # print('Full Data: {}'.format(f_data.shape))
+    # print('Full Labels: {}'.format(f_labels.shape))
     
     training_dataset = TensorDataset(torch.Tensor(training_data), torch.Tensor(training_labels))
     validation_dataset = TensorDataset(torch.Tensor(validation_data), torch.Tensor(validation_labels))
-    f_dataset = TensorDataset(torch.Tensor(f_data), torch.Tensor(f_labels))
+    #f_dataset = TensorDataset(torch.Tensor(f_data), torch.Tensor(f_labels))
 
-    return training_dataset, validation_dataset, f_dataset
+    return training_dataset, validation_dataset#, f_dataset
 
 
 def get_filteredLFP():

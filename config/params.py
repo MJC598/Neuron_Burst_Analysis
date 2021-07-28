@@ -1,0 +1,19 @@
+import os, sys
+sys.path.append(os.path.split(sys.path[0])[0])
+from models import LFPNet
+
+PREVIOUS_TIME = 250
+LOOK_AHEAD = 5
+INPUT_FEATURES = 1
+OUTPUT_SIZE = 1
+INPUT_SIZE = 1 #INPUT_FEATURES * PREVIOUS_TIME
+HIDDEN_SIZE = 1
+BATCH_SIZE = 512
+BATCH_FIRST = True
+DROPOUT = 0.0
+EPOCHS = 30
+MODEL = LFPNet.LFPNetLSTM
+MODEL_NAME = 'LFPNetLSTM'
+OUTPUT = 'RawLFP'
+INPUT = 'RawLFP'
+RECURRENT_NET = False

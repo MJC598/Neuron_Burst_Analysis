@@ -72,26 +72,28 @@ class LFPNetMC(nn.Module):
 
 
 class LFPNetLSTM(nn.Module):
+
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
         super(LFPNetLSTM, self).__init__()
         # self.lstm = nn.LSTM(input_size=1, hidden_size=params.LOOK_AHEAD, batch_first=params.BATCH_FIRST)
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
                            num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
-        self.fc = nn.Linear(4, out_size)
+        self.fc = nn.Linear(126, 126)
         self.relu = nn.ReLU()
         
-        self.convs5k5 = nn.Conv1d(1, 1, kernel_size=5, stride=5)
-        self.convs5k3 = nn.Conv1d(1, 1, kernel_size=3, stride=5)
+        # self.convs5k5 = nn.Conv1d(1, 1, kernel_size=5, stride=5)
+        # self.convs5k3 = nn.Conv1d(1, 1, kernel_size=3, stride=5)
 
-        self.convs3k5 = nn.Conv1d(1, 1, kernel_size=5, stride=3, padding=1)
-        self.convs3k3 = nn.Conv1d(1, 1, kernel_size=3, stride=3, padding=1)
+        # self.convs3k5 = nn.Conv1d(1, 1, kernel_size=5, stride=3, padding=1)
+        # self.convs3k3 = nn.Conv1d(1, 1, kernel_size=3, stride=3, padding=1)
 
         self.convs2k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=2)
         
         # self.dilation = nn.Conv1d(1, 1, kernel_size=3, stride=1, dilation=2)
         # self.convs1k5 = nn.Conv1d(1, 1, kernel_size=5, stride=1, padding=2)
         # self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=1, dilation=2)
-        self.dilation = nn.Conv1d(1, 1, kernel_size=7, stride=1, dilation=11, padding=2)
+        # self.dilation = nn.Conv1d(1, 1, kernel_size=7, stride=1, dilation=11, padding=2)
+        self.shortcut = nn.Conv1d(1, 1, kernel_size=1, stride=2, padding=1, bias=False)
         self.convs1k5 = nn.Conv1d(1, 1, kernel_size=5, stride=1, padding=2)
         self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=6)
         self.pool = nn.MaxPool1d(5, 1)
@@ -105,7 +107,8 @@ class LFPNetLSTM(nn.Module):
         # out3 = self.relu(self.convs2k3(out2))
         # print(out3.size())
 
-        residual = self.dilation(self.dilation(x))
+        # residual = self.dilation(self.dilation(x))
+        residual = self.shortcut(x)
         out = self.relu(self.convs1k5(x))
         out = self.relu(self.convs1k3(out))
         out = self.pool(out)
@@ -124,9 +127,10 @@ class LFPNetLSTM(nn.Module):
         # out = self.relu(self.convs1k3(out))
         # out = self.pool(out)
         # out += residual
-        # print(out.size())
+        # print(out.size()) 126
 
         out += out2
+        out = self.fc(out)
 
         # out2 = self.relu(self.convs5k5(x))
         

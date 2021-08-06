@@ -135,10 +135,10 @@ class LFPNetLSTM(nn.Module):
         return out
 
 
-class LFPNetDialatedConvLSTM(nn.Module):
+class LFPNetDilatedConvLSTM(nn.Module):
 
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
-        super(LFPNetLSTM, self).__init__()
+        super(LFPNetDilatedConvLSTM, self).__init__()
 
         #ACTIVATION
         self.relu = nn.ReLU()
@@ -147,7 +147,7 @@ class LFPNetDialatedConvLSTM(nn.Module):
         self.pool = nn.MaxPool1d(5, 1)
 
         # DILATIONS
-        self.dilation124 = nn.Conv1d(1, 5, kernel_size=1, stride=1, dilation=124)
+        self.dilation128 = nn.Conv1d(1, 5, kernel_size=1, stride=1, dilation=128)
         self.dilation64 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=64)
         self.dilation32 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=32)
         self.dilation16 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=16)
@@ -180,22 +180,34 @@ class LFPNetDialatedConvLSTM(nn.Module):
     def forward(self, x):
 
         residual = x
-        out = self.dilation124(x)
-        print(residual.size())
-        print(out.size())
+        out = self.dilation128(x)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,512:]
+        out = out[:,:,512:]
         out = self.dilation64(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-256:]
+        out = out[:,:,-256:]
         out = self.dilation32(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-128:]
+        out = out[:,:,-128:]
         out = self.dilation16(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-64:]
+        out = out[:,:,-64:]
         out = self.dilation8(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-32:]
+        out = out[:,:,-32:]
         out = self.dilation4(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-32:]
+        out = out[:,:,-32:]
         out = self.dilation2(out)
         out = torch.cat((out, residual), dim=1)
+        residual = x[:,:,-16:]
+        out = out[:,:,-16:]
         out = self.dilation1(out)
         out = torch.cat((out, residual), dim=1)
         out = self.downchannel(out)

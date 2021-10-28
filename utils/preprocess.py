@@ -218,9 +218,9 @@ def get_rawLFP():
     full_data = lfp_in
     full_labels = lfp_in
     
-    training_samples = 900000
+    training_samples = 450000
     indices = RNG.integers(low=0, high=full_labels.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD), size=training_samples)
-    validation_samples = 100000
+    validation_samples = 50000
     v_indices = RNG.integers(low=0, high=full_labels.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD), size=validation_samples)
     training_data = []
     training_labels = []
@@ -260,7 +260,9 @@ def get_rawLFP():
     # print('Full Labels: {}'.format(f_labels.shape))
     
     training_dataset = TensorDataset(torch.Tensor(training_data), torch.Tensor(training_labels))
+    print("training_dataset built")
     validation_dataset = TensorDataset(torch.Tensor(validation_data), torch.Tensor(validation_labels))
+    print("validation_dataset built")
     #f_dataset = TensorDataset(torch.Tensor(f_data), torch.Tensor(f_labels))
 
     return training_dataset, validation_dataset#, f_dataset

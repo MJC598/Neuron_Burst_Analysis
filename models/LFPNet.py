@@ -147,15 +147,15 @@ class LFPNetDilatedConvLSTM(nn.Module):
         self.pool = nn.MaxPool1d(5, 1)
 
         # DILATIONS
-        self.dilation128 = nn.Conv1d(1, 5, kernel_size=1, stride=1, dilation=128)
-        self.dilation64 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=64)
-        self.dilation32 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=32)
-        self.dilation16 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=16)
-        self.dilation8 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=8)
-        self.dilation4 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=4)
-        self.dilation2 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=2)
-        self.dilation1 = nn.Conv1d(6, 5, kernel_size=1, stride=1, dilation=1)
-        self.downchannel = nn.Conv1d(6, 1, kernel_size=1, stride=1, dilation=1, bias=False)
+        self.dilation128 = nn.Conv1d(1, 5, kernel_size=3, stride=1, dilation=128)
+        self.dilation64 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=64)
+        self.dilation32 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=32)
+        self.dilation16 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=16)
+        self.dilation8 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=8)
+        self.dilation4 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=4)
+        self.dilation2 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=2)
+        self.dilation1 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=1)
+        self.downchannel = nn.Conv1d(5, 1, kernel_size=1, stride=1, dilation=1, bias=False)
         self.fc = nn.Linear(1024, 1024)
 
         self.shortcuts5 = nn.Conv1d(1, 1, kernel_size=1, stride=5, bias=False)
@@ -163,7 +163,7 @@ class LFPNetDilatedConvLSTM(nn.Module):
         self.fcs5 = nn.Linear(50, 250)
 
         #STRIDE = 2
-        self.shortcuts2 = nn.Conv1d(1, 1, kernel_size=1, stride=2, padding=1, bias=False)
+        self.shortcuts2 = nn.Conv1d(1, 1, kernel_size=1, stride=1, padding=1, dilation=128, bias=False)
         self.convs2k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=6)
         self.fcs2 = nn.Linear(126, 250)
 
@@ -171,6 +171,8 @@ class LFPNetDilatedConvLSTM(nn.Module):
         self.shortcuts1 = nn.Conv1d(1, 1, kernel_size=1, stride=1, bias=False)
         self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=1, padding=3)
         self.fcs1 = nn.Linear(250, 250)
+        
+        self.fcfinal = nn.Linear(10, 16)
 
         #RECURRENT NETWORK
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
@@ -178,43 +180,47 @@ class LFPNetDilatedConvLSTM(nn.Module):
 
 
     def forward(self, x):
-
-        residual = x
+#         print(x.shape)
+#         residual = self.shortcuts2(x)
         out = self.dilation128(x)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,512:]
+#         print(out.shape, residual.shape)
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,512:]
         out = out[:,:,512:]
         out = self.dilation64(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-256:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-256:]
         out = out[:,:,-256:]
         out = self.dilation32(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-128:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-128:]
         out = out[:,:,-128:]
         out = self.dilation16(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-64:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-64:]
         out = out[:,:,-64:]
         out = self.dilation8(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-32:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-32:]
         out = out[:,:,-32:]
         out = self.dilation4(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-32:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-32:]
         out = out[:,:,-32:]
         out = self.dilation2(out)
-        out = torch.cat((out, residual), dim=1)
-        residual = x[:,:,-16:]
+#         out = torch.cat((out, residual), dim=1)
+#         residual = x[:,:,-16:]
         out = out[:,:,-16:]
         out = self.dilation1(out)
-        out = torch.cat((out, residual), dim=1)
-        out = self.downchannel(out)
+#         out = torch.cat((out, residual), dim=1)
+#         out = self.downchannel(out)
     
 
         out = torch.transpose(out, 1, 2)
-
+        out = out.reshape((-1,10))
+#         print(out.shape)
+        out = torch.unsqueeze(self.fcfinal(out),2)
+#         print(out.shape)
         out, (h_n, c_n) = self.rnn(out)
         out = out[:,((-1)*params.LOOK_AHEAD):,:] #self.fc(out)
         return out

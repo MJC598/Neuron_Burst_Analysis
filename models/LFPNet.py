@@ -222,7 +222,7 @@ class LFPNetDilatedConvLSTM(nn.Module):
         out = torch.unsqueeze(self.fcfinal(out),2)
 #         print(out.shape)
         out, (h_n, c_n) = self.rnn(out)
-        out = out[:,((-1)*params.LOOK_AHEAD):,:] #self.fc(out)
+        out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out
 
 
@@ -256,10 +256,13 @@ class baselineLSTM(nn.Module):
         # self.c0 = torch.randn(num_layers, batch_size, hidden_size)
 
     def forward(self, x):
+        x = torch.transpose(x, 1, 2)
+        # print(x.shape)
         # x, (h_n, c_n)  = self.rnn(x,(self.h0,self.c0))
         x, (h_n, c_n) = self.rnn(x)
+        # print(x.shape)
         # take last cell output
-        out = x #self.lin(x[:, -1, :])
+        out = torch.squeeze(x[:,-1,:]) #self.lin(x[:, -1, :])
 
         return out
 

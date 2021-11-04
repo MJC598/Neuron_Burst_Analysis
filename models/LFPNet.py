@@ -76,26 +76,58 @@ class LFPNetLSTM(nn.Module):
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
         super(LFPNetLSTM, self).__init__()
 
-        #ACTIVATION
-        self.relu = nn.ReLU()
-        
-        #POOLING KERNEL = 5
-        self.pool = nn.MaxPool1d(5, 1)
+        #DIALATION BRANCH (B1)
+        self.dilation_branch = nn.Sequential(
+            #1024 -> 512
+            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=257),
+            nn.ReLU(),
+            #512 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=129),
+            nn.ReLU(),
+            #256 -> 128
+            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=65)
+        )
 
-        # STRIDE = 5
-        self.shortcuts5 = nn.Conv1d(1, 1, kernel_size=1, stride=5, bias=False)
-        self.convs5k3 = nn.Conv1d(1, 1, kernel_size=3, stride=5, padding=10)
-        self.fcs5 = nn.Linear(50, 250)
+        #CONVOLUTION BRANCH (B2)
+        self.convolution_block1 = nn.Sequential(
+            #1024 -> 512
+            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=7, stride=2, padding=3, dilation=1),
+            nn.ReLU(),
+            #512 -> 512
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=1, padding=2, dilation=1),
+            nn.ReLU()
+        )
 
-        #STRIDE = 2
-        self.shortcuts2 = nn.Conv1d(1, 1, kernel_size=1, stride=2, padding=1, bias=False)
-        self.convs2k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=6)
-        self.fcs2 = nn.Linear(126, 250)
+        self.convolution_block2 = nn.Sequential(
+            #512 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=2, padding=2, dilation=1),
+            nn.ReLU(),
+            #256 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=1, dilation=1)
+            nn.ReLU()
+        )
 
-        #STRIDE = 1
-        self.shortcuts1 = nn.Conv1d(1, 1, kernel_size=1, stride=1, bias=False)
-        self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=1, padding=3)
-        self.fcs1 = nn.Linear(250, 250)
+        self.convolution_block3 = nn.Sequential(
+            #256 -> 128
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=2, padding= 1, dilation=1),
+            nn.ReLU(),
+            #128 -> 128
+            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),
+            nn.ReLU()
+        )
+
+        self.pool = nn.AvgPool1d(2)
+
+        #FCN BRANCH (B3)
+        self.fcn_branch = nn.Sequential(
+            nn.Linear(in_features=1024, out_features=512),
+            nn.ReLU(),
+            nn.Linear(in_features=512, out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=128),
+            nn.ReLU()
+        )
+
 
         #RECURRENT NETWORK
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
@@ -103,35 +135,17 @@ class LFPNetLSTM(nn.Module):
 
 
     def forward(self, x):
+        # input shape: batch x feature x timestep
+        di_out = self.dilation_branch(x)
+        c1_out = self.convolution_block1(x)
+        c2_out = self.convolution_block2(c1_out + self.pool(x))
+        conv_out = self.convolution_block3(c2_out + self.pool(c1_out))
+        fcn_out = self.fcn_branch(x)
 
-        #S1 Branch
-        residuals1 = self.shortcuts1(x)
-        outs1 = self.relu(self.convs1k3(x))
-        outs1 = self.pool(outs1)
-        outs1 += residuals1
-        outs1 = self.fcs1(outs1)
+        feature_out = di_out + conv_out + fcn_out
 
-        #S2 Branch
-        residuals2 = self.shortcuts2(x)
-        outs2 = self.relu(self.convs2k3(x))
-        outs2 = self.pool(outs2)
-        outs2 += residuals2 #126 features
-        outs2 = self.fcs2(outs2)
-
-        #S5 Branch
-        residuals5 = self.shortcuts5(x)
-        outs5 = self.relu(self.convs5k3(x))
-        outs5 = self.pool(outs5)
-        outs5 += residuals5 #50 features
-        outs5 = self.fcs5(outs5)
-
-        #BRANCH CONCATENATION
-        out = outs1 + outs2 + outs5      
-
-        out = torch.transpose(out, 1, 2)
-
-        out, (h_n, c_n) = self.rnn(out)
-        out = out[:,((-1)*params.LOOK_AHEAD):,:] #self.fc(out)
+        out, (h_n, c_n) = self.rnn(feature_out)
+        out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out
 
 

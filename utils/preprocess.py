@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.random import default_rng
-from scipy import signal, stats
+from scipy import signal, stats, io
 import torch
 from torch.utils.data import TensorDataset
 import sys
@@ -182,6 +182,12 @@ def get_burstLFP(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
     return burst_dataset, filt_dataset
 
 
+def get_inVivo_LFP():
+    mat = io.loadmat(paths.INVIVO_LFP)
+    print(mat.keys())
+    return
+
+
 def get_rawLFP():
     lfp_input_file = paths.RAW_LFP
     lfp_labels_file = paths.FILTERED_LFP
@@ -218,9 +224,9 @@ def get_rawLFP():
     full_data = lfp_in
     full_labels = lfp_in
     
-    training_samples = 450000
+    training_samples = params.TRAIN_SAMPLES
     indices = RNG.integers(low=0, high=full_labels.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD), size=training_samples)
-    validation_samples = 50000
+    validation_samples = params.VAL_SAMPLES
     v_indices = RNG.integers(low=0, high=full_labels.shape[0]-(params.PREVIOUS_TIME+params.LOOK_AHEAD), size=validation_samples)
     training_data = []
     training_labels = []

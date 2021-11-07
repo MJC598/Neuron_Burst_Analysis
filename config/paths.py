@@ -10,6 +10,8 @@ FILTERED_LFP = os.path.join(ROOT_DIR, 'data/raw_data/LFP_filt.txt')
 RAW_LFP = os.path.join(ROOT_DIR, 'data/raw_data/LFP_elec_combine.txt')
 # RAW_LFP = '/home/matt/repos/Research/Neuron_Burst_Analysis/data/raw_data/LFP_elec_combine.txt'
 
+INVIVO_LFP = os.path.join(ROOT_DIR, 'data/invivo/LFP_BLA_gamma.mat')
+
 FIRING_RATES = os.path.join(ROOT_DIR, 'data/raw_data/FR_PN_ITN.txt')
 # FIRING_RATES = '/home/matt/repos/Research/Neuron_Burst_Analysis/data/raw_data/FR_PN_ITN.txt'
 

@@ -85,7 +85,7 @@ class LFPNetLSTM(nn.Module):
             nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=129),
             nn.ReLU(),
             #256 -> 128
-            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=65)
+            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62)
         )
 
         #CONVOLUTION BRANCH (B2)
@@ -103,7 +103,7 @@ class LFPNetLSTM(nn.Module):
             nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=2, padding=2, dilation=1),
             nn.ReLU(),
             #256 -> 256
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=1, dilation=1)
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=1, dilation=1),
             nn.ReLU()
         )
 
@@ -142,8 +142,12 @@ class LFPNetLSTM(nn.Module):
         conv_out = self.convolution_block3(c2_out + self.pool(c1_out))
         fcn_out = self.fcn_branch(x)
 
+        # print(di_out.shape, conv_out.shape, fcn_out.shape)
+        
         feature_out = di_out + conv_out + fcn_out
 
+        feature_out = torch.transpose(feature_out, 1, 2)
+        # print(feature_out.shape)
         out, (h_n, c_n) = self.rnn(feature_out)
         out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out

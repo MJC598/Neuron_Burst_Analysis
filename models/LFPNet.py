@@ -75,6 +75,8 @@ class LFPNetLSTM(nn.Module):
 
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
         super(LFPNetLSTM, self).__init__()
+        
+        # self.norm = nn.BatchNorm1d(1024)
 
         #DIALATION BRANCH (B1)
         self.dilation_branch = nn.Sequential(
@@ -116,7 +118,7 @@ class LFPNetLSTM(nn.Module):
             nn.ReLU()
         )
 
-        self.pool = nn.AvgPool1d(2)
+        self.pool = nn.MaxPool1d(2)
 
         #FCN BRANCH (B3)
         self.fcn_branch = nn.Sequential(
@@ -136,6 +138,7 @@ class LFPNetLSTM(nn.Module):
 
     def forward(self, x):
         # input shape: batch x feature x timestep
+        # x = torch.transpose(self.norm(torch.transpose(x, 1, 2)), 1, 2)
         di_out = self.dilation_branch(x)
         c1_out = self.convolution_block1(x)
         c2_out = self.convolution_block2(c1_out + self.pool(x))
@@ -173,65 +176,30 @@ class LFPNetDilatedConvLSTM(nn.Module):
         self.dilation4 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=4)
         self.dilation2 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=2)
         self.dilation1 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=1)
-        self.downchannel = nn.Conv1d(5, 1, kernel_size=1, stride=1, dilation=1, bias=False)
-        self.fc = nn.Linear(1024, 1024)
-
-        self.shortcuts5 = nn.Conv1d(1, 1, kernel_size=1, stride=5, bias=False)
-        self.convs5k3 = nn.Conv1d(1, 1, kernel_size=3, stride=5, padding=10)
-        self.fcs5 = nn.Linear(50, 250)
-
-        #STRIDE = 2
-        self.shortcuts2 = nn.Conv1d(1, 1, kernel_size=1, stride=1, padding=1, dilation=128, bias=False)
-        self.convs2k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=6)
-        self.fcs2 = nn.Linear(126, 250)
-
-        #STRIDE = 1
-        self.shortcuts1 = nn.Conv1d(1, 1, kernel_size=1, stride=1, bias=False)
-        self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=1, padding=3)
-        self.fcs1 = nn.Linear(250, 250)
+        
         
         self.fcfinal = nn.Linear(10, 16)
-
         #RECURRENT NETWORK
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
                            num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
 
 
     def forward(self, x):
-#         print(x.shape)
-#         residual = self.shortcuts2(x)
         out = self.dilation128(x)
-#         print(out.shape, residual.shape)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,512:]
         out = out[:,:,512:]
         out = self.dilation64(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-256:]
         out = out[:,:,-256:]
         out = self.dilation32(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-128:]
         out = out[:,:,-128:]
         out = self.dilation16(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-64:]
         out = out[:,:,-64:]
         out = self.dilation8(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-32:]
         out = out[:,:,-32:]
         out = self.dilation4(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-32:]
         out = out[:,:,-32:]
         out = self.dilation2(out)
-#         out = torch.cat((out, residual), dim=1)
-#         residual = x[:,:,-16:]
         out = out[:,:,-16:]
         out = self.dilation1(out)
-#         out = torch.cat((out, residual), dim=1)
-#         out = self.downchannel(out)
     
 
         out = torch.transpose(out, 1, 2)

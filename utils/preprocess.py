@@ -3,8 +3,7 @@ from numpy.random import default_rng
 from scipy import signal, stats, io
 import torch
 from torch.utils.data import TensorDataset
-import sys
-import os
+import sys, os, random
 
 sys.path.append(os.path.split(sys.path[0])[0])
 from config import paths, params
@@ -182,10 +181,48 @@ def get_burstLFP(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
     return burst_dataset, filt_dataset
 
 
+def build_invivo_data():
+    mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
+    input_list = [] #1024 x 1 length=samples
+    output_list = [] #100 x 1 length=samples
+    for arr in mat:
+        # print(arr[0].shape)
+        if arr[0].shape[0] < (params.PREVIOUS_TIME + params.LOOK_AHEAD + 2):
+            # print(arr[0].shape[0])
+            continue
+        for i in range(arr[0].shape[0] - (params.PREVIOUS_TIME + params.LOOK_AHEAD + 2)):
+            b = i+params.PREVIOUS_TIME
+            # print(arr[0].shape)
+            temp1 = np.diff(arr[0][i:b+2,:], n=2, axis=0)
+            temp2 = np.diff(arr[0][b:b+params.LOOK_AHEAD+2,:], n=2, axis=0)
+            input_list.append(temp1)
+            output_list.append(temp2)
+
+    c = list(zip(input_list, output_list))
+
+    random.shuffle(c)
+
+    input_list, output_list = zip(*c)
+
+    inputs = np.stack(input_list[:500000], axis=0)
+    outputs = np.stack(output_list[:500000], axis=0)
+
+    np.savez(paths.INVIVO_DATA, x=inputs, y=outputs)
+
+
 def get_inVivo_LFP():
-    mat = io.loadmat(paths.INVIVO_LFP)
-    print(mat.keys())
-    return
+    if not os.path.isfile(paths.INVIVO_DATA):
+        build_invivo_data()
+    npfile = np.load(paths.INVIVO_DATA)
+    inputs = npfile['x']
+    outputs = npfile['y']
+    tr_f = np.transpose(inputs[:params.TRAIN_SAMPLES, :, :], (0,2,1))
+    tr_l = np.transpose(outputs[:params.TRAIN_SAMPLES, :, :], (0,2,1))
+    te_f = np.transpose(inputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
+    te_l = np.transpose(outputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
+    train = TensorDataset(torch.Tensor(tr_f), torch.Tensor(tr_l))
+    test = TensorDataset(torch.Tensor(te_f), torch.Tensor(te_l))
+    return train, test
 
 
 def get_rawLFP():

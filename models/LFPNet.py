@@ -72,71 +72,143 @@ class LFPNetMC(nn.Module):
 
 
 class LFPNetLSTM(nn.Module):
+
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
         super(LFPNetLSTM, self).__init__()
-        # self.lstm = nn.LSTM(input_size=1, hidden_size=params.LOOK_AHEAD, batch_first=params.BATCH_FIRST)
+        
+        # self.norm = nn.BatchNorm1d(1024)
+
+        #DIALATION BRANCH (B1)
+        self.dilation_branch = nn.Sequential(
+            #1024 -> 512
+            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=257),
+            nn.ReLU(),
+            #512 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=129),
+            nn.ReLU(),
+            #256 -> 128
+            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62)
+        )
+
+        #CONVOLUTION BRANCH (B2)
+        self.convolution_block1 = nn.Sequential(
+            #1024 -> 512
+            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=7, stride=2, padding=3, dilation=1),
+            nn.ReLU(),
+            #512 -> 512
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=1, padding=2, dilation=1),
+            nn.ReLU()
+        )
+
+        self.convolution_block2 = nn.Sequential(
+            #512 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=2, padding=2, dilation=1),
+            nn.ReLU(),
+            #256 -> 256
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=1, dilation=1),
+            nn.ReLU()
+        )
+
+        self.convolution_block3 = nn.Sequential(
+            #256 -> 128
+            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=2, padding= 1, dilation=1),
+            nn.ReLU(),
+            #128 -> 128
+            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),
+            nn.ReLU()
+        )
+
+        self.pool = nn.MaxPool1d(2)
+
+        #FCN BRANCH (B3)
+        self.fcn_branch = nn.Sequential(
+            nn.Linear(in_features=1024, out_features=512),
+            nn.ReLU(),
+            nn.Linear(in_features=512, out_features=256),
+            nn.ReLU(),
+            nn.Linear(in_features=256, out_features=128),
+            nn.ReLU()
+        )
+
+
+        #RECURRENT NETWORK
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
                            num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
-        self.fc = nn.Linear(4, out_size)
-        self.relu = nn.ReLU()
-        
-        self.convs5k5 = nn.Conv1d(1, 1, kernel_size=5, stride=5)
-        self.convs5k3 = nn.Conv1d(1, 1, kernel_size=3, stride=5)
-
-        self.convs3k5 = nn.Conv1d(1, 1, kernel_size=5, stride=3, padding=1)
-        self.convs3k3 = nn.Conv1d(1, 1, kernel_size=3, stride=3, padding=1)
-
-        self.convs2k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=2)
-        
-        # self.dilation = nn.Conv1d(1, 1, kernel_size=3, stride=1, dilation=2)
-        # self.convs1k5 = nn.Conv1d(1, 1, kernel_size=5, stride=1, padding=2)
-        # self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=1, dilation=2)
-        self.dilation = nn.Conv1d(1, 1, kernel_size=7, stride=1, dilation=11, padding=2)
-        self.convs1k5 = nn.Conv1d(1, 1, kernel_size=5, stride=1, padding=2)
-        self.convs1k3 = nn.Conv1d(1, 1, kernel_size=3, stride=2, padding=6)
-        self.pool = nn.MaxPool1d(5, 1)
 
 
     def forward(self, x):
+        # input shape: batch x feature x timestep
+        # x = torch.transpose(self.norm(torch.transpose(x, 1, 2)), 1, 2)
+        di_out = self.dilation_branch(x)
+        c1_out = self.convolution_block1(x)
+        c2_out = self.convolution_block2(c1_out + self.pool(x))
+        conv_out = self.convolution_block3(c2_out + self.pool(c1_out))
+        fcn_out = self.fcn_branch(x)
 
-        out2 = self.relu(self.convs2k3(x))
-        # print(out2.size())
-
-        # out3 = self.relu(self.convs2k3(out2))
-        # print(out3.size())
-
-        residual = self.dilation(self.dilation(x))
-        out = self.relu(self.convs1k5(x))
-        out = self.relu(self.convs1k3(out))
-        out = self.pool(out)
-        # print(out.size())
-        # print(residual.size())
-        out += residual
-
-        # residual = self.dilation(self.dilation(out))
-        # out = self.relu(self.convs1k5(out))
-        # out = self.relu(self.convs1k3(out))
-        # out = self.pool(out)
-        # out += residual
-
-        # residual = self.dilation(self.dilation(out))
-        # out = self.relu(self.convs1k5(out))
-        # out = self.relu(self.convs1k3(out))
-        # out = self.pool(out)
-        # out += residual
-        # print(out.size())
-
-        out += out2
-
-        # out2 = self.relu(self.convs5k5(x))
+        # print(di_out.shape, conv_out.shape, fcn_out.shape)
         
+        feature_out = di_out + conv_out + fcn_out
+
+        feature_out = torch.transpose(feature_out, 1, 2)
+        # print(feature_out.shape)
+        out, (h_n, c_n) = self.rnn(feature_out)
+        out = torch.squeeze(out[:,-1,:]) #self.fc(out)
+        return out
+
+
+class LFPNetDilatedConvLSTM(nn.Module):
+
+    def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
+        super(LFPNetDilatedConvLSTM, self).__init__()
+
+        #ACTIVATION
+        self.relu = nn.ReLU()
+        
+        #POOLING KERNEL = 5
+        self.pool = nn.MaxPool1d(5, 1)
+
+        # DILATIONS
+        self.dilation128 = nn.Conv1d(1, 5, kernel_size=3, stride=1, dilation=128)
+        self.dilation64 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=64)
+        self.dilation32 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=32)
+        self.dilation16 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=16)
+        self.dilation8 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=8)
+        self.dilation4 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=4)
+        self.dilation2 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=2)
+        self.dilation1 = nn.Conv1d(5, 5, kernel_size=3, stride=1, dilation=1)
+        
+        
+        self.fcfinal = nn.Linear(10, 16)
+        #RECURRENT NETWORK
+        self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
+                           num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
+
+
+    def forward(self, x):
+        out = self.dilation128(x)
+        out = out[:,:,512:]
+        out = self.dilation64(out)
+        out = out[:,:,-256:]
+        out = self.dilation32(out)
+        out = out[:,:,-128:]
+        out = self.dilation16(out)
+        out = out[:,:,-64:]
+        out = self.dilation8(out)
+        out = out[:,:,-32:]
+        out = self.dilation4(out)
+        out = out[:,:,-32:]
+        out = self.dilation2(out)
+        out = out[:,:,-16:]
+        out = self.dilation1(out)
+    
 
         out = torch.transpose(out, 1, 2)
-
+        out = out.reshape((-1,10))
+#         print(out.shape)
+        out = torch.unsqueeze(self.fcfinal(out),2)
+#         print(out.shape)
         out, (h_n, c_n) = self.rnn(out)
-        out = out[:,((-1)*params.LOOK_AHEAD):,:] #self.fc(out)
-        # out = self.fc(self.lstm(out))
-        # print(out.size())
+        out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out
 
 
@@ -170,10 +242,13 @@ class baselineLSTM(nn.Module):
         # self.c0 = torch.randn(num_layers, batch_size, hidden_size)
 
     def forward(self, x):
+        x = torch.transpose(x, 1, 2)
+        # print(x.shape)
         # x, (h_n, c_n)  = self.rnn(x,(self.h0,self.c0))
         x, (h_n, c_n) = self.rnn(x)
+        # print(x.shape)
         # take last cell output
-        out = x #self.lin(x[:, -1, :])
+        out = torch.squeeze(x[:,-1,:]) #self.lin(x[:, -1, :])
 
         return out
 

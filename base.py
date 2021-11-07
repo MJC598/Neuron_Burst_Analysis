@@ -94,7 +94,7 @@ def train_model(model,save_filepath,training_loader,validation_loader,epochs,dev
         end = time.time()
         # shows total loss
         if epoch%5 == 0:
-            print('[%d, %5d] train loss: %.6f val loss: %.6f' % (epoch + 1, i + 1, train_loss, val_loss))
+            tqdm.write('[%d, %5d] train loss: %.6f val loss: %.6f' % (epoch + 1, i + 1, train_loss, val_loss))
 #         print(end - start)
         
         #saving best model

@@ -80,7 +80,7 @@ class LFPNetLSTM(nn.Module):
         channels = 50
 
         #ACTIVATION
-        self.activation = nn.RRelU
+        self.activation = nn.LeakyReLU()
 
         #DIALATION BRANCH (B1)
         self.dilation_branch = nn.Sequential(
@@ -150,7 +150,7 @@ class LFPNetLSTM(nn.Module):
         self.fcn_pred_layer = nn.Sequential(
             nn.Linear(in_features=128, out_features=96),
             self.activation,
-            nn.Linear(in_features=96, out_features=64),
+            nn.Linear(in_features=96, out_features=out_size),
             self.activation
         )
 
@@ -162,6 +162,11 @@ class LFPNetLSTM(nn.Module):
     def forward(self, x):
         # input shape: batch x feature x timestep
         # x = torch.transpose(self.norm(torch.transpose(x, 1, 2)), 1, 2)
+        # x = torch.transpose(x, 1, 2)
+        # x, (h_n, c_n) = self.rnn(x)
+        # # x = torch.squeeze(x[:,-1,:])
+        # x = torch.transpose(x, 1, 2)
+        
         di_out = self.dilation_branch(x)
         c1_out = self.convolution_block1(x)
         c2_out = self.convolution_block2(c1_out + self.pool(x))
@@ -171,13 +176,13 @@ class LFPNetLSTM(nn.Module):
         # print(di_out.shape, conv_out.shape, fcn_out.shape)
         
         feature_out = di_out + conv_out + fcn_out
+        
+        out = self.fcn_pred_layer(feature_out)
+        # print(out.shape)
 
-        pred_out = self.fcn_pred_layer(feature_out)
-
-        pred_out = torch.transpose(pred_out, 1, 2)
-        # print(feature_out.shape)
-        out, (h_n, c_n) = self.rnn(pred_out)
-        out = torch.squeeze(out[:,-1,:]) #self.fc(out)
+        # pred_out = torch.transpose(pred_out, 1, 2)
+        # out, (h_n, c_n) = self.rnn(pred_out)
+        # out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out
 
 

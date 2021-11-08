@@ -182,6 +182,10 @@ def get_burstLFP(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
 
 
 def build_invivo_data():
+
+    oscBand = np.array([55.,90.])
+    b, a = signal.butter(4,oscBand,btype='bandpass')
+
     mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
     input_list = [] #1024 x 1 length=samples
     output_list = [] #100 x 1 length=samples
@@ -193,8 +197,8 @@ def build_invivo_data():
         for i in range(arr[0].shape[0] - (params.PREVIOUS_TIME + params.LOOK_AHEAD + 2)):
             b = i+params.PREVIOUS_TIME
             # print(arr[0].shape)
-            temp1 = np.diff(arr[0][i:b+2,:], n=2, axis=0)
-            temp2 = np.diff(arr[0][b:b+params.LOOK_AHEAD+2,:], n=2, axis=0)
+            temp1 = arr[0][i:b+2,:]
+            temp2 = signal.lfilter(b, a, arr[0][b:b+params.LOOK_AHEAD+2,:], axis=0)
             input_list.append(temp1)
             output_list.append(temp2)
 

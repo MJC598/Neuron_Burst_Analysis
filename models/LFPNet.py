@@ -79,6 +79,9 @@ class LFPNetLSTM(nn.Module):
         # self.norm = nn.BatchNorm1d(1024)
         channels = 50
 
+        #ACTIVATION
+        self.activation = nn.Softmax()
+
         #DIALATION BRANCH (B1)
         self.dilation_branch = nn.Sequential(
             #1024 -> 512
@@ -91,7 +94,8 @@ class LFPNetLSTM(nn.Module):
             nn.ReLU(),
             #256 -> 128
             nn.Dropout(dropout),
-            nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62)
+            nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62),
+            self.activation
         )
 
         #CONVOLUTION BRANCH (B2)
@@ -125,7 +129,7 @@ class LFPNetLSTM(nn.Module):
             #128 -> 128
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),
-            nn.ReLU()
+            self.activation
         )
 
         self.pool = nn.MaxPool1d(2)
@@ -134,15 +138,21 @@ class LFPNetLSTM(nn.Module):
         self.fcn_branch = nn.Sequential(
             nn.Dropout(dropout),
             nn.Linear(in_features=1024, out_features=512),
-            nn.ReLU(),
+            self.activation,
             nn.Dropout(dropout),
             nn.Linear(in_features=512, out_features=256),
-            nn.ReLU(),
+            self.activation,
             nn.Dropout(dropout),
             nn.Linear(in_features=256, out_features=128),
-            nn.ReLU()
+            self.activation
         )
 
+        self.fcn_pred_layer = nn.Sequential(
+            nn.Linear(in_features=128, out_features=96),
+            self.activation,
+            nn.Linear(in_features=96, out_features=64),
+            self.activation
+        )
 
         #RECURRENT NETWORK
         self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
@@ -162,9 +172,11 @@ class LFPNetLSTM(nn.Module):
         
         feature_out = di_out + conv_out + fcn_out
 
-        feature_out = torch.transpose(feature_out, 1, 2)
+        pred_out = self.fcn_pred_layer(feature_out)
+
+        pred_out = torch.transpose(pred_out, 1, 2)
         # print(feature_out.shape)
-        out, (h_n, c_n) = self.rnn(feature_out)
+        out, (h_n, c_n) = self.rnn(pred_out)
         out = torch.squeeze(out[:,-1,:]) #self.fc(out)
         return out
 

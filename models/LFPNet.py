@@ -77,44 +77,54 @@ class LFPNetLSTM(nn.Module):
         super(LFPNetLSTM, self).__init__()
         
         # self.norm = nn.BatchNorm1d(1024)
+        channels = 50
 
         #DIALATION BRANCH (B1)
         self.dilation_branch = nn.Sequential(
             #1024 -> 512
-            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=257),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=1, out_channels=channels, kernel_size=3, stride=1, padding=0, dilation=257),
             nn.ReLU(),
             #512 -> 256
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=0, dilation=129),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=1, padding=0, dilation=129),
             nn.ReLU(),
             #256 -> 128
-            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62)
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62)
         )
 
         #CONVOLUTION BRANCH (B2)
         self.convolution_block1 = nn.Sequential(
             #1024 -> 512
-            nn.Conv1d(in_channels=1, out_channels=10, kernel_size=7, stride=2, padding=3, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=1, out_channels=channels, kernel_size=7, stride=2, padding=3, dilation=1),
             nn.ReLU(),
             #512 -> 512
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=1, padding=2, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=5, stride=1, padding=2, dilation=1),
             nn.ReLU()
         )
 
         self.convolution_block2 = nn.Sequential(
             #512 -> 256
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=5, stride=2, padding=2, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=5, stride=2, padding=2, dilation=1),
             nn.ReLU(),
             #256 -> 256
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=1, padding=1, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=1, padding=1, dilation=1),
             nn.ReLU()
         )
 
         self.convolution_block3 = nn.Sequential(
             #256 -> 128
-            nn.Conv1d(in_channels=10, out_channels=10, kernel_size=3, stride=2, padding= 1, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=2, padding= 1, dilation=1),
             nn.ReLU(),
             #128 -> 128
-            nn.Conv1d(in_channels=10, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),
+            nn.Dropout(dropout),
+            nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),
             nn.ReLU()
         )
 
@@ -122,10 +132,13 @@ class LFPNetLSTM(nn.Module):
 
         #FCN BRANCH (B3)
         self.fcn_branch = nn.Sequential(
+            nn.Dropout(dropout),
             nn.Linear(in_features=1024, out_features=512),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(in_features=512, out_features=256),
             nn.ReLU(),
+            nn.Dropout(dropout),
             nn.Linear(in_features=256, out_features=128),
             nn.ReLU()
         )

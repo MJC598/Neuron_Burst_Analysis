@@ -183,22 +183,23 @@ def get_burstLFP(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
 
 def build_invivo_data():
 
-    oscBand = np.array([55.,90.])
-    b, a = signal.butter(4,oscBand,btype='bandpass')
+    oscBand = np.array([0.08,0.14])
+    z, a = signal.butter(4,oscBand,btype='bandpass')
 
     mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
     input_list = [] #1024 x 1 length=samples
     output_list = [] #100 x 1 length=samples
     for arr in mat:
         # print(arr[0].shape)
-        if arr[0].shape[0] < (params.PREVIOUS_TIME + params.LOOK_AHEAD + 2):
+        if arr[0].shape[0] < (params.PREVIOUS_TIME + params.LOOK_AHEAD):
             # print(arr[0].shape[0])
             continue
-        for i in range(arr[0].shape[0] - (params.PREVIOUS_TIME + params.LOOK_AHEAD + 2)):
+        for i in range(arr[0].shape[0] - (params.PREVIOUS_TIME + params.LOOK_AHEAD)):
             b = i+params.PREVIOUS_TIME
             # print(arr[0].shape)
-            temp1 = arr[0][i:b+2,:]
-            temp2 = signal.lfilter(b, a, arr[0][b:b+params.LOOK_AHEAD+2,:], axis=0)
+            temp1 = arr[0][i:b,:]
+            temp2 = signal.lfilter(z, a, arr[0][b:b+params.LOOK_AHEAD,:], axis=0)
+            # print(temp1.shape, temp2.shape)
             input_list.append(temp1)
             output_list.append(temp2)
 

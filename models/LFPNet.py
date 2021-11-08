@@ -80,18 +80,18 @@ class LFPNetLSTM(nn.Module):
         channels = 50
 
         #ACTIVATION
-        self.activation = nn.Softmax()
+        self.activation = nn.RRelU
 
         #DIALATION BRANCH (B1)
         self.dilation_branch = nn.Sequential(
             #1024 -> 512
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=1, out_channels=channels, kernel_size=3, stride=1, padding=0, dilation=257),
-            nn.ReLU(),
+            self.activation,
             #512 -> 256
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=1, padding=0, dilation=129),
-            nn.ReLU(),
+            self.activation,
             #256 -> 128
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=3, stride=1, padding=0, dilation=62),
@@ -103,29 +103,29 @@ class LFPNetLSTM(nn.Module):
             #1024 -> 512
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=1, out_channels=channels, kernel_size=7, stride=2, padding=3, dilation=1),
-            nn.ReLU(),
+            self.activation,
             #512 -> 512
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=5, stride=1, padding=2, dilation=1),
-            nn.ReLU()
+            self.activation
         )
 
         self.convolution_block2 = nn.Sequential(
             #512 -> 256
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=5, stride=2, padding=2, dilation=1),
-            nn.ReLU(),
+            self.activation,
             #256 -> 256
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=1, padding=1, dilation=1),
-            nn.ReLU()
+            self.activation,
         )
 
         self.convolution_block3 = nn.Sequential(
             #256 -> 128
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=channels, kernel_size=3, stride=2, padding= 1, dilation=1),
-            nn.ReLU(),
+            self.activation,
             #128 -> 128
             nn.Dropout(dropout),
             nn.Conv1d(in_channels=channels, out_channels=1, kernel_size=1, stride=1, padding=0, dilation=1),

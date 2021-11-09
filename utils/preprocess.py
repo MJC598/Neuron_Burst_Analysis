@@ -189,6 +189,7 @@ def build_invivo_data():
     mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
     input_list = [] #1024 x 1 length=samples
     output_list = [] #100 x 1 length=samples
+    full_filter_list = [] #100 x 1 length=samples (filters with entire length then cuts down)
     for arr in mat:
         # print(arr[0].shape)
         if arr[0].shape[0] < (params.PREVIOUS_TIME + params.LOOK_AHEAD):
@@ -199,20 +200,23 @@ def build_invivo_data():
             # print(arr[0].shape)
             temp1 = arr[0][i:b,:]
             temp2 = signal.lfilter(z, a, arr[0][b:b+params.LOOK_AHEAD,:], axis=0)
+            temp3 = (signal.lfilter(z, a, arr[0][:b+params.LOOK_AHEAD,:], axis=0))[b:,:]
             # print(temp1.shape, temp2.shape)
             input_list.append(temp1)
             output_list.append(temp2)
+            full_filter_list.append(temp3)
 
-    c = list(zip(input_list, output_list))
+    c = list(zip(input_list, output_list, full_filter_list))
 
     random.shuffle(c)
 
-    input_list, output_list = zip(*c)
+    input_list, output_list, full_filter_list = zip(*c)
 
     inputs = np.stack(input_list[:500000], axis=0)
     outputs = np.stack(output_list[:500000], axis=0)
+    full_filters = np.stack(full_filter_list[:500000], axis=0)
 
-    np.savez(paths.INVIVO_DATA, x=inputs, y=outputs)
+    np.savez(paths.INVIVO_DATA, x=inputs, y=outputs, z=full_filters)
 
 
 def get_inVivo_LFP():
@@ -221,13 +225,17 @@ def get_inVivo_LFP():
     npfile = np.load(paths.INVIVO_DATA)
     inputs = npfile['x']
     outputs = npfile['y']
+    full_filters = npfile['z']
     tr_f = np.transpose(inputs[:params.TRAIN_SAMPLES, :, :], (0,2,1))
     tr_l = np.transpose(outputs[:params.TRAIN_SAMPLES, :, :], (0,2,1))
+    fr_f = np.transpose(full_filters[:params.TRAIN_SAMPLES, :, :], (0,2,1))
     te_f = np.transpose(inputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
     te_l = np.transpose(outputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
+    fe_f = np.tranpose(full_filters[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
     train = TensorDataset(torch.Tensor(tr_f), torch.Tensor(tr_l))
     test = TensorDataset(torch.Tensor(te_f), torch.Tensor(te_l))
-    return train, test
+    filtered = TensorDataset(torch.Tensor(fr_f), torch.Tensor(fe_f))
+    return train, test, filtered
 
 
 def get_rawLFP():

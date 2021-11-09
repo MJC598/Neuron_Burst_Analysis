@@ -212,9 +212,9 @@ def build_invivo_data():
 
     input_list, output_list, full_filter_list = zip(*c)
 
-    inputs = np.stack(input_list[:500000], axis=0)
-    outputs = np.stack(output_list[:500000], axis=0)
-    full_filters = np.stack(full_filter_list[:500000], axis=0)
+    inputs = np.stack(input_list[:200000], axis=0)
+    outputs = np.stack(output_list[:200000], axis=0)
+    full_filters = np.stack(full_filter_list[:200000], axis=0)
 
     np.savez(paths.INVIVO_DATA, x=inputs, y=outputs, z=full_filters)
 
@@ -231,10 +231,11 @@ def get_inVivo_LFP():
     fr_f = np.transpose(full_filters[:params.TRAIN_SAMPLES, :, :], (0,2,1))
     te_f = np.transpose(inputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
     te_l = np.transpose(outputs[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
-    fe_f = np.tranpose(full_filters[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
+    fe_f = np.transpose(full_filters[params.TRAIN_SAMPLES:params.TRAIN_SAMPLES+params.VAL_SAMPLES, :, :], (0,2,1))
     train = TensorDataset(torch.Tensor(tr_f), torch.Tensor(tr_l))
     test = TensorDataset(torch.Tensor(te_f), torch.Tensor(te_l))
-    filtered = TensorDataset(torch.Tensor(fr_f), torch.Tensor(fe_f))
+    print(fr_f.shape, fe_f.shape)
+    filtered = TensorDataset(torch.Tensor(fe_f), torch.Tensor(fe_f))
     return train, test, filtered
 
 

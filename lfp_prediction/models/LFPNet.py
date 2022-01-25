@@ -5,7 +5,7 @@ import os, sys
 from torch.nn.modules import padding
 sys.path.append(os.path.split(sys.path[0])[0])
 
-from config import params
+from lfp_prediction.config import params
 
 
 class FCN(nn.Module):
@@ -155,8 +155,8 @@ class LFPNetLSTM(nn.Module):
         )
 
         #RECURRENT NETWORK
-        self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
-                           num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
+        self.rnn = nn.LSTM(input_size=in_size, hidden_size=h_size,
+                           num_layers=num_layers, batch_first=params.BATCH_FIRST, dropout=dropout)
 
 
     def forward(self, x):
@@ -210,8 +210,8 @@ class LFPNetDilatedConvLSTM(nn.Module):
         
         self.fcfinal = nn.Linear(10, 16)
         #RECURRENT NETWORK
-        self.rnn = nn.LSTM(input_size=in_size,hidden_size=h_size,
-                           num_layers=num_layers,batch_first=params.BATCH_FIRST,dropout=dropout)
+        self.rnn = nn.LSTM(input_size=in_size, hidden_size=h_size,
+                           num_layers=num_layers, batch_first=params.BATCH_FIRST, dropout=dropout)
 
 
     def forward(self, x):

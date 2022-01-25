@@ -122,8 +122,7 @@ testpath==0.4.4
 threadpoolctl==2.1.0
 tifffile==2020.10.1
 tomlkit==0.7.0
-torch==1.7.0
-torchvision==0.8.1
+torch==1.10.0
 tornado==6.1
 tqdm==4.59.0
 traitlets==5.0.5

@@ -15,9 +15,9 @@ import pandas as pds
 from sklearn.metrics import r2_score, mean_squared_error
 import copy
 
-from utils import preprocess, metrics
-from config import params, paths
-from models import LFPNet
+from lfp_prediction.utils import preprocess, metrics
+from lfp_prediction.config import paths, params
+from lfp_prediction.models import LFPNet
 
 s = 67
 
@@ -125,7 +125,7 @@ def train_model(model,save_filepath,training_loader,validation_loader,epochs,dev
 # f_tr, f_va, t_filt, v_filt = preprocess.get_end1D()#f_data, t_filt, v_filt, f_filt = get_end1D()
 
 # f_tr, f_va, f_data = preprocess.get_rawLFP()
-f_tr, f_va = preprocess.get_rawLFP()
+f_tr, f_va = preprocess.get_raw_lfp()
 
 # noise = get_WN(channels=2)
 # sin = get_sin()
@@ -133,9 +133,9 @@ f_tr, f_va = preprocess.get_rawLFP()
 # burst, fburst = preprocess.get_burstLFP()
 
 # Turn datasets into iterable dataloaders
-train_loader = DataLoader(dataset=f_tr,batch_size=params.BATCH_SIZE)
+train_loader = DataLoader(dataset=f_tr, batch_size=params.BATCH_SIZE)
 # tfilt_loader = DataLoader(dataset=t_filt,params.BATCH_SIZE=params.BATCH_SIZE)
-val_loader = DataLoader(dataset=f_va,batch_size=params.BATCH_SIZE)
+val_loader = DataLoader(dataset=f_va, batch_size=params.BATCH_SIZE)
 # vfilt_loader = DataLoader(dataset=v_filt,params.BATCH_SIZE=params.BATCH_SIZE)
 
 # full_loader = DataLoader(dataset=f_data,batch_size=params.BATCH_SIZE)
@@ -147,13 +147,13 @@ val_loader = DataLoader(dataset=f_va,batch_size=params.BATCH_SIZE)
 # burst_loader = DataLoader(dataset=burst,params.BATCH_SIZE=params.BATCH_SIZE)
 # fburst_loader = DataLoader(dataset=fburst,params.BATCH_SIZE=params.BATCH_SIZE)
 
-model1 = params.MODEL(params.INPUT_SIZE,params.HIDDEN_SIZE,params.OUTPUT_SIZE)
+model1 = params.MODEL(params.INPUT_SIZE, params.HIDDEN_SIZE, params.OUTPUT_SIZE)
 model_initial = copy.deepcopy(model1)
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 model1.to(device)
 
-pnfr_training_loss, pnfr_validation_loss = train_model(model1,paths.PATH,train_loader,
-                                                       val_loader,params.EPOCHS,device)
+pnfr_training_loss, pnfr_validation_loss = train_model(model1, paths.PATH, train_loader,
+                                                       val_loader, params.EPOCHS, device)
 
 
 model1 = torch.load(paths.PATH)
@@ -213,9 +213,9 @@ ax1[1].set_xlabel('Epoch')
 fig, ax = plt.subplots(nrows=2, ncols=1)
 fig.tight_layout()
 
-ax[0].plot(np.arange(start-params.OUTPUT_SIZE,end), v_real[start-params.OUTPUT_SIZE:end], color='blue',label='Labels')
+ax[0].plot(np.arange(start - params.OUTPUT_SIZE, end), v_real[start - params.OUTPUT_SIZE:end], color='blue', label='Labels')
 # ax[2,0].plot(np.arange(start-10,end), v_output_list[start-10:end,2], color='red',label='Internal Loop')
-ax[0].scatter(np.arange(start-params.OUTPUT_SIZE,end), v_pred[start-1:end], color='slateblue',label='Training t+10')
+ax[0].scatter(np.arange(start - params.OUTPUT_SIZE, end), v_pred[start - 1:end], color='slateblue', label='Training t+10')
 # ax[0].scatter(np.arange(start-params.OUTPUT_SIZE,end), v_pred[start-2:end+8,1], color='lightsteelblue',label='Training t+2')
 # ax[0].scatter(np.arange(start-params.OUTPUT_SIZE,end), v_pred[start-3:end+7,2], color='gray',label='Training t+3')
 # ax[0].scatter(np.arange(start-params.OUTPUT_SIZE,end), v_pred[start-4:end+6,3], color='sienna',label='Training t+4')
@@ -232,9 +232,9 @@ ax[0].set_ylabel('LFP')
 ax[0].set_xlabel('Time')
 # ax[2,0].legend()
 
-ax[1].plot(np.arange(start-params.OUTPUT_SIZE,end), t_real[start-params.OUTPUT_SIZE:end], color='blue',label='Labels')
+ax[1].plot(np.arange(start - params.OUTPUT_SIZE, end), t_real[start - params.OUTPUT_SIZE:end], color='blue', label='Labels')
 # a[2,1].plot(np.arange(start-10,end), t_output_list[start-10:end,2], color='red',label='Internal Loop')
-ax[1].scatter(np.arange(start-params.OUTPUT_SIZE,end), t_pred[start-1:end], color='slateblue',label='Training t+10')
+ax[1].scatter(np.arange(start - params.OUTPUT_SIZE, end), t_pred[start - 1:end], color='slateblue', label='Training t+10')
 # ax[1].scatter(np.arange(start-params.OUTPUT_SIZE,end), t_pred[start-2:end+8,1], color='lightsteelblue',label='Training t+2')
 # ax[1].scatter(np.arange(start-params.OUTPUT_SIZE,end), t_pred[start-3:end+7,2], color='gray',label='Training t+3')
 # ax[1].scatter(np.arange(start-params.OUTPUT_SIZE,end), t_pred[start-4:end+6,3], color='sienna',label='Training t+4')

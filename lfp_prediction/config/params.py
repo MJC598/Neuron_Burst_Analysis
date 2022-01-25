@@ -1,6 +1,6 @@
 import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
-from models import LFPNet
+from lfp_prediction.models import LFPNet
 
 PREVIOUS_TIME = 1024
 LOOK_AHEAD = 100#16

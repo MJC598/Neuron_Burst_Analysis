@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.metrics import r2_score
 import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
-from config import params
+from lfp_prediction.config import params
 
 
 def r2_eval(model, testing_dataloader, filt=None, k=None):

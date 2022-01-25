@@ -5,8 +5,7 @@ import os, sys
 import random
 
 sys.path.append(os.path.split(sys.path[0])[0])
-from config import params, paths
-
+from lfp_prediction.config import paths, params
 
 oscBand = np.array([0.08,0.14])
 z, a = signal.butter(4,oscBand,btype='bandpass')
@@ -25,11 +24,11 @@ def get_in_out():
             # print(arr[0].shape[0])
             continue
         for i in range(arr[0].shape[0] - (params.PREVIOUS_TIME + params.LOOK_AHEAD)):
-            b = i+params.PREVIOUS_TIME
+            b = i + params.PREVIOUS_TIME
             # print(arr[0].shape)
             temp1 = arr[0][i:b,:]
-            temp2 = signal.lfilter(z, a, arr[0][b:b+params.LOOK_AHEAD,:], axis=0)
-            temp3 = (signal.lfilter(z, a, arr[0][i:b+params.LOOK_AHEAD,:], axis=0))[-100:,:]
+            temp2 = signal.lfilter(z, a, arr[0][b:b + params.LOOK_AHEAD, :], axis=0)
+            temp3 = (signal.lfilter(z, a, arr[0][i:b + params.LOOK_AHEAD, :], axis=0))[-100:, :]
             # print(temp1.shape, temp2.shape, temp3.shape)
             # if count%73 == 0:
             input_list.append(temp1)

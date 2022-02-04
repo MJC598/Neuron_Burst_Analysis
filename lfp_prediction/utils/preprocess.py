@@ -284,8 +284,8 @@ get_WN -> TensorDataset
 
 
 def get_whitenoise(time_s=300000, channels=1):
-    lfp_input_file = 'data/raw_data/LFP_elec_combine.txt'
-    with open(lfp_input_file) as f:
+    lfp_input_file = paths.RAW_LFP
+    with open(paths.RAW_LFP) as f:
         lfp_in = f.read().splitlines()
     lfp_in = np.array([float(x) for x in lfp_in]).reshape((-1, 1))
 

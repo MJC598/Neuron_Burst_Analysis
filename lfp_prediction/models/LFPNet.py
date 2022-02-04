@@ -10,13 +10,21 @@ from lfp_prediction.config import params
 
 class FCN(nn.Module):
     def __init__(self, in_size, h_size, out_size):
-        super(FCN,self).__init__()
+        super(FCN, self).__init__()
         self.fc1 = nn.Linear(in_size, h_size)
-        self.tanh = nn.Tanh()
-        self.fc2 = nn.Linear(h_size, out_size)
+        self.act = nn.Tanh()
+        self.fc2 = nn.Linear(h_size, 750)
+        self.fc3 = nn.Linear(750, 250)
+        self.fc4 = nn.Linear(250, out_size)
+
     def forward(self, x):
-        x = self.tanh(self.fc1(x))
-        out = self.fc2(x)
+        x = self.fc1(x)
+        x = self.act(x)  # x + torch.square(torch.sin(x))
+        x = self.fc2(x)
+        x = self.act(x)  # x + torch.square(torch.sin(x))
+        x = self.fc3(x)
+        x = self.act(x)  # x + torch.square(torch.sin(x))
+        out = self.fc4(x)
         return out
 
 

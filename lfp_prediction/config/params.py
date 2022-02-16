@@ -2,7 +2,7 @@ import os, sys
 sys.path.append(os.path.split(sys.path[0])[0])
 from lfp_prediction.models import LFPNet
 
-PREVIOUS_TIME = 1024
+PREVIOUS_TIME = 2048
 LOOK_AHEAD = 100#16
 INPUT_FEATURES = 1
 OUTPUT_SIZE = 100#16

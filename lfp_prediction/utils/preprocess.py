@@ -121,6 +121,7 @@ def get_burst_lfp(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
     return burst_dataset, filt_dataset
 
 
+# TODO Deprecated Function
 def build_invivo_data():
     mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
     input_list = []  # 1024 x 1 length=samples
@@ -151,6 +152,7 @@ def build_invivo_data():
     np.savez(paths.INVIVO_DATA, x=inputs, y=outputs, z=full_filters)
 
 
+# TODO Deprecated Function
 def get_invivo_lfp():
     if not os.path.isfile(paths.INVIVO_DATA):
         build_invivo_data()

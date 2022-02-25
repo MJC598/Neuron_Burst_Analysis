@@ -29,6 +29,9 @@ class FCN(nn.Module):
 class CNN(nn.Module):
     def __init__(self, in_size, h_size, out_size):
         super(CNN, self).__init__()
+        self.bn1 = nn.BatchNorm1d(1)
+        self.bn6 = nn.BatchNorm1d(6)
+        self.bn18 = nn.BatchNorm1d(18)
         self.convstride8 = nn.Conv1d(in_channels=1, out_channels=6, kernel_size=7, stride=8, dilation=1)
 
         self.convstride16 = nn.Conv1d(in_channels=1, out_channels=6, kernel_size=7, stride=16, dilation=1)
@@ -55,6 +58,7 @@ class CNN(nn.Module):
         self.fcfinal = nn.Linear(128, out_size)
 
     def forward(self, x):
+        x = self.bn1(x)
         y1 = self.act(self.convstride16(self.dropout(x)))  # batch x 6 x 128
 
         y2 = self.act(self.convstride8(self.dropout(x)))  # batch x 6 x 256
@@ -63,18 +67,18 @@ class CNN(nn.Module):
 
         y3 = self.act(self.conv1(self.dropout(x)))  # 2044
         res = y3
-        y3 = self.res_block(y3)
+        y3 = self.res_block(self.bn6(y3))
         y3 += res
         y3 = self.pool(y3)  # 1022
         y3 = self.act(self.conv2(self.dropout(y3)))  # 1018
         res = y3
-        y3 = self.res_block(y3)
+        y3 = self.res_block(self.bn6(y3))
         y3 += res
         y3 = self.pool(y3)  # 509
         y3 = self.pool(y3)  # 255
         y3 = self.pool(y3)  # 128
 
-        y = torch.cat((y1, y2, y3), dim=1)
+        y = self.bn18(torch.cat((y1, y2, y3), dim=1))
 
         y = self.act(self.convfm(y))
         out = self.fcfinal(y)

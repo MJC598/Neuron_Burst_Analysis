@@ -16,11 +16,11 @@ class FCN(nn.Module):
     def forward(self, x):
         x = self.fc1(x)
         x = self.act(x)  # x + torch.square(torch.sin(x))
-        # x = self.dropout(self.fc2(x))
-        x = self.fc2(x)
+        x = self.dropout(self.fc2(x))
+        # x = self.fc2(x)
         x = self.act(x)  # x + torch.square(torch.sin(x))
-        # x = self.dropout(self.fc3(x))
-        x = self.fc3(x)
+        x = self.dropout(self.fc3(x))
+        # x = self.fc3(x)
         x = self.act(x)  # x + torch.square(torch.sin(x))
         out = self.fc4(x)
         return out
@@ -51,7 +51,7 @@ class CNN(nn.Module):
 
         self.conv2 = nn.Conv1d(in_channels=6, out_channels=6, kernel_size=5, stride=1, dilation=1)
 
-        self.convfm = nn.Conv1d(in_channels=18, out_channels=1, kernel_size=1, stride=1, dilation=1)
+        self.convfm = nn.Conv1d(in_channels=6, out_channels=1, kernel_size=1, stride=1, dilation=1)
 
         self.dropout = nn.Dropout(p=0.8)
         self.act = nn.ReLU()
@@ -59,11 +59,11 @@ class CNN(nn.Module):
 
     def forward(self, x):
         x = self.bn1(x)
-        y1 = self.act(self.convstride16(self.dropout(x)))  # batch x 6 x 128
+        # y1 = self.act(self.convstride16(self.dropout(x)))  # batch x 6 x 128
 
-        y2 = self.act(self.convstride8(self.dropout(x)))  # batch x 6 x 256
+        # y2 = self.act(self.convstride8(self.dropout(x)))  # batch x 6 x 256
 
-        y2 = self.pool(self.res_block(y2))  # batch x 6 x 128
+        # y2 = self.pool(self.res_block(y2))  # batch x 6 x 128
 
         y3 = self.act(self.conv1(self.dropout(x)))  # 2044
         res = y3
@@ -78,12 +78,41 @@ class CNN(nn.Module):
         y3 = self.pool(y3)  # 255
         y3 = self.pool(y3)  # 128
 
-        y = self.bn18(torch.cat((y1, y2, y3), dim=1))
+        # y = self.bn18(torch.cat((y1, y2, y3), dim=1))
+        y = y3
 
         y = self.act(self.convfm(y))
         out = self.fcfinal(y)
         return out
 
+
+class BaselineLSTM(nn.Module):
+    def __init__(self, in_size: int = 1,
+                 h_size: int = 50,
+                 out_size: int = 100,
+                 num_layers: int = 1,
+                 batch_first: bool = True,
+                 dropout: float = 0.0) -> None:
+        super(BaselineLSTM, self).__init__()
+        self.rnn = nn.LSTM(input_size=in_size,
+                           hidden_size=h_size,
+                           num_layers=num_layers,
+                           batch_first=batch_first,
+                           dropout=dropout)
+        self.lin = nn.Linear(h_size, out_size)
+
+    def forward(self, x):
+        x = torch.transpose(x, 1, 2)  # RNN variants expect (N, L, H)
+        x, (_, _) = self.rnn(x)  # Returns (N, L, hidden_size)
+        out = self.lin(x[:, -1, :])  # Feeds hidden stats of last cell to FCN
+
+        return out
+
+
+# TODO
+"""
+ARCHIVE OR DEPRICATE classes below
+"""
 
 # Formerly Conv1dFCN
 class LFPNet1C(nn.Module):
@@ -318,28 +347,6 @@ class baselineRNN(nn.Module):
 
         # take last cell output
         out = self.lin(x[:, -1, :])
-
-        return out
-
-
-class baselineLSTM(nn.Module):
-    def __init__(self, input_size, hidden_size, output_size=1,
-                 batch_size=1, num_layers=1, batch_first=True, dropout=0.0):
-        super(baselineLSTM, self).__init__()
-        self.rnn = nn.LSTM(input_size=input_size, hidden_size=hidden_size,
-                           num_layers=num_layers, batch_first=batch_first, dropout=dropout)
-        self.lin = nn.Linear(hidden_size, output_size)
-        # self.h0 = torch.randn(num_layers, batch_size, hidden_size)
-        # self.c0 = torch.randn(num_layers, batch_size, hidden_size)
-
-    def forward(self, x):
-        x = torch.transpose(x, 1, 2)
-        # print(x.shape)
-        # x, (h_n, c_n)  = self.rnn(x,(self.h0,self.c0))
-        x, (h_n, c_n) = self.rnn(x)
-        # print(x.shape)
-        # take last cell output
-        out = torch.squeeze(x[:, -1, :])  # self.lin(x[:, -1, :])
 
         return out
 

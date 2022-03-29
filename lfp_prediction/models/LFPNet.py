@@ -1,120 +1,18 @@
 import torch
 import torch.nn as nn
 from lfp_prediction.config import params
-
-
-class FCN(nn.Module):
-    def __init__(self, in_size, h_size, out_size):
-        super(FCN, self).__init__()
-        self.dropout = nn.Dropout(p=0.8)
-        self.fc1 = nn.Linear(in_size, h_size)
-        self.act = nn.ReLU()  # lambda x: x + torch.square(torch.sin(x))
-        self.fc2 = nn.Linear(h_size, 750)
-        self.fc3 = nn.Linear(750, 250)
-        self.fc4 = nn.Linear(250, out_size)
-
-    def forward(self, x):
-        x = self.fc1(x)
-        x = self.act(x)  # x + torch.square(torch.sin(x))
-        x = self.dropout(self.fc2(x))
-        # x = self.fc2(x)
-        x = self.act(x)  # x + torch.square(torch.sin(x))
-        x = self.dropout(self.fc3(x))
-        # x = self.fc3(x)
-        x = self.act(x)  # x + torch.square(torch.sin(x))
-        out = self.fc4(x)
-        return out
-
-
-class CNN(nn.Module):
-    def __init__(self, in_size, h_size, out_size):
-        super(CNN, self).__init__()
-        self.bn1 = nn.BatchNorm1d(1)
-        self.bn6 = nn.BatchNorm1d(6)
-        self.bn18 = nn.BatchNorm1d(18)
-        self.convstride8 = nn.Conv1d(in_channels=1, out_channels=6, kernel_size=7, stride=8, dilation=1)
-
-        self.convstride16 = nn.Conv1d(in_channels=1, out_channels=6, kernel_size=7, stride=16, dilation=1)
-
-        self.pool = nn.MaxPool1d(kernel_size=3, stride=2, padding=1)
-
-        self.res_block = nn.Sequential(
-            nn.Dropout(p=0.8),
-            nn.Conv1d(in_channels=6, out_channels=6, kernel_size=3, stride=1, dilation=1, padding=1),
-            nn.ReLU(),
-            nn.Dropout(p=0.8),
-            nn.Conv1d(in_channels=6, out_channels=6, kernel_size=3, stride=1, dilation=1, padding=1),
-            nn.ReLU()
-        )
-
-        self.conv1 = nn.Conv1d(in_channels=1, out_channels=6, kernel_size=5, stride=1, dilation=1)  # 2044
-
-        self.conv2 = nn.Conv1d(in_channels=6, out_channels=6, kernel_size=5, stride=1, dilation=1)
-
-        self.convfm = nn.Conv1d(in_channels=6, out_channels=1, kernel_size=1, stride=1, dilation=1)
-
-        self.dropout = nn.Dropout(p=0.8)
-        self.act = nn.ReLU()
-        self.fcfinal = nn.Linear(128, out_size)
-
-    def forward(self, x):
-        x = self.bn1(x)
-        # y1 = self.act(self.convstride16(self.dropout(x)))  # batch x 6 x 128
-
-        # y2 = self.act(self.convstride8(self.dropout(x)))  # batch x 6 x 256
-
-        # y2 = self.pool(self.res_block(y2))  # batch x 6 x 128
-
-        y3 = self.act(self.conv1(self.dropout(x)))  # 2044
-        res = y3
-        y3 = self.res_block(self.bn6(y3))
-        y3 += res
-        y3 = self.pool(y3)  # 1022
-        y3 = self.act(self.conv2(self.dropout(y3)))  # 1018
-        res = y3
-        y3 = self.res_block(self.bn6(y3))
-        y3 += res
-        y3 = self.pool(y3)  # 509
-        y3 = self.pool(y3)  # 255
-        y3 = self.pool(y3)  # 128
-
-        # y = self.bn18(torch.cat((y1, y2, y3), dim=1))
-        y = y3
-
-        y = self.act(self.convfm(y))
-        out = self.fcfinal(y)
-        return out
-
-
-class BaselineLSTM(nn.Module):
-    def __init__(self, in_size: int = 1,
-                 h_size: int = 50,
-                 out_size: int = 100,
-                 num_layers: int = 1,
-                 batch_first: bool = True,
-                 dropout: float = 0.0) -> None:
-        super(BaselineLSTM, self).__init__()
-        self.rnn = nn.LSTM(input_size=in_size,
-                           hidden_size=h_size,
-                           num_layers=num_layers,
-                           batch_first=batch_first,
-                           dropout=dropout)
-        self.lin = nn.Linear(h_size, out_size)
-
-    def forward(self, x):
-        x = torch.transpose(x, 1, 2)  # RNN variants expect (N, L, H)
-        x, (_, _) = self.rnn(x)  # Returns (N, L, hidden_size)
-        out = self.lin(x[:, -1, :])  # Feeds hidden stats of last cell to FCN
-
-        return out
-
+import deprecation
 
 # TODO
 """
-ARCHIVE OR DEPRICATE classes below
+ARCHIVE OR DEPRICATE THIS FILE
 """
 
+
 # Formerly Conv1dFCN
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class LFPNet1C(nn.Module):
     def __init__(self, in_size, h_size, out_size):
         super(LFPNet1C, self).__init__()
@@ -135,6 +33,9 @@ class LFPNet1C(nn.Module):
         return out
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class LFPNetMC(nn.Module):
     def __init__(self, in_size, h_size, out_size):
         super(LFPNetMC, self).__init__()
@@ -165,6 +66,9 @@ class LFPNetMC(nn.Module):
         return out
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class LFPNetLSTM(nn.Module):
 
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
@@ -279,6 +183,9 @@ class LFPNetLSTM(nn.Module):
         return out
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class LFPNetDilatedConvLSTM(nn.Module):
 
     def __init__(self, in_size, h_size, out_size, num_layers=1, dropout=0.0):
@@ -332,6 +239,9 @@ class LFPNetDilatedConvLSTM(nn.Module):
         return out
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class baselineRNN(nn.Module):
     def __init__(self, input_size, hidden_size, output_size=1,
                  batch_size=1, num_layers=1, batch_first=True, dropout=0.0):
@@ -351,6 +261,9 @@ class baselineRNN(nn.Module):
         return out
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="Use the more specific models instead")
 class baselineGRU(nn.Module):
     def __init__(self, input_size, hidden_size, output_size=1,
                  batch_size=1, num_layers=2, batch_first=True, dropout=0.0):

@@ -25,6 +25,8 @@ LOSS_FILE = os.path.join(ROOT_DIR, ('results/losses/bursts/losses_' + str(params
                                     + params.OUTPUT + str(params.LOOK_AHEAD) + '.csv')
                         )
 
+LOSS_DIRECTORY = os.path.join(ROOT_DIR, )
+
 
 PATH = os.path.join(ROOT_DIR, ('models/saved_models/LFPNet/' + str(params.MODEL_NAME) + '_'
                                + params.INPUT + str(params.PREVIOUS_TIME) +

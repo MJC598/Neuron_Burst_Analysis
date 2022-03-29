@@ -4,6 +4,8 @@ docs/
 internal loop/
 .vscode/
 
+*.pth
+
 *.csv
 
 data/

@@ -1,6 +1,7 @@
 import os
 import random
 
+import deprecation
 import numpy as np
 import torch
 from numpy.random import default_rng
@@ -15,8 +16,10 @@ osc_band = np.array([0.08, 0.14])
 b, a = signal.butter(4, osc_band, btype='bandpass', output='ba')
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def filter_index_data(indices, lfp_raw, lfp_filt):
-
     data = []
     labels = []
     filt = []
@@ -36,6 +39,9 @@ def filter_index_data(indices, lfp_raw, lfp_filt):
     return training_data, training_labels, training_filt
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_end_1d(training_samples=900000, validation_samples=100000):
     lfp_input_file = paths.RAW_LFP
     lfp_filt_file = paths.FILTERED_LFP
@@ -64,6 +70,9 @@ def get_end_1d(training_samples=900000, validation_samples=100000):
     return training_dataset, validation_dataset, training_filt, validation_filt
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_burst_lfp(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
     with open(in_file) as f:
         lfp_in = f.read().splitlines()
@@ -121,7 +130,9 @@ def get_burst_lfp(in_file=paths.RAW_LFP, out_file=paths.FILTERED_LFP):
     return burst_dataset, filt_dataset
 
 
-# TODO Deprecated Function
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def build_invivo_data():
     mat = io.loadmat(paths.INVIVO_LFP)['LFP_seg']
     input_list = []  # 1024 x 1 length=samples
@@ -152,7 +163,9 @@ def build_invivo_data():
     np.savez(paths.INVIVO_DATA, x=inputs, y=outputs, z=full_filters)
 
 
-# TODO Deprecated Function
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_invivo_lfp():
     if not os.path.isfile(paths.INVIVO_DATA):
         build_invivo_data()
@@ -173,6 +186,9 @@ def get_invivo_lfp():
     return train, test, filtered
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_raw_lfp():
     lfp_input_file = paths.RAW_LFP
     with open(lfp_input_file) as f:
@@ -199,7 +215,7 @@ def get_raw_lfp():
         training_data.append(full_data[idx:idx + params.PREVIOUS_TIME, :].reshape((-1, params.PREVIOUS_TIME)))
         training_labels.append(
             full_labels[
-                idx + params.PREVIOUS_TIME:idx + params.PREVIOUS_TIME + params.LOOK_AHEAD, :
+            idx + params.PREVIOUS_TIME:idx + params.PREVIOUS_TIME + params.LOOK_AHEAD, :
             ].reshape((-1, params.OUTPUT_SIZE)))
 
     training_data = np.stack(training_data, axis=0)
@@ -209,7 +225,7 @@ def get_raw_lfp():
         validation_data.append(full_data[idx:idx + params.PREVIOUS_TIME, :].reshape((-1, params.PREVIOUS_TIME)))
         validation_labels.append(
             full_labels[
-                idx + params.PREVIOUS_TIME:idx + params.PREVIOUS_TIME + params.LOOK_AHEAD, :
+            idx + params.PREVIOUS_TIME:idx + params.PREVIOUS_TIME + params.LOOK_AHEAD, :
             ].reshape((-1, params.OUTPUT_SIZE)))
     validation_data = np.stack(validation_data, axis=0)
     validation_labels = np.stack(validation_labels, axis=0)
@@ -220,6 +236,9 @@ def get_raw_lfp():
     return training_dataset, validation_dataset
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_filtered_lfp():
     lfp_input_file = paths.FILTERED_LFP
     lfp_labels_file = paths.FILTERED_LFP
@@ -285,6 +304,9 @@ get_WN -> TensorDataset
 """
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_whitenoise(time_s=300000, channels=1):
     lfp_input_file = paths.RAW_LFP
     with open(paths.RAW_LFP) as f:
@@ -309,6 +331,9 @@ def get_whitenoise(time_s=300000, channels=1):
     return noise_dataset
 
 
+@deprecation.deprecated(deprecated_in="0.1.0", removed_in="1.0.0",
+                        current_version="0.1.0",
+                        details="This data is no longer expected")
 def get_sin(time_s=3000):
     amp = .06  # Randomly chosen to be close to LFP magnitude
     data = []

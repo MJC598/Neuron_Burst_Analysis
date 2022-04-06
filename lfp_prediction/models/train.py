@@ -4,6 +4,7 @@ from tqdm import tqdm
 import pandas as pds
 from typing import Optional, Tuple, List
 from torch.utils.data import DataLoader
+from datetime import datetime
 
 from lfp_prediction.config import paths
 
@@ -106,7 +107,12 @@ def fit(model: nn.Module,
     )
 
     # Writing loss csv, change path to whatever you want to name it
-    save_path = paths.LOSS_FILE if 'loss_save_path' not in kwargs else kwargs.get('loss_save_path')
-    loss_df.to_csv(save_path, index=False)
+    now = datetime.now()
+    savefile = now.strftime("%m_%d_%Y_%H_%M_%S")
+    save_path = paths.LOSS_DIR if 'loss_save_path' not in kwargs else kwargs.get('loss_save_path')
+    loss_df.to_csv(save_path + savefile + '.csv', index=False)
+
+    save_path = paths.MODELS_DIR if 'model_save_path' not in kwargs else kwargs.get('model_save_path')
+    torch.save(model.state_dict(), save_path + savefile + '.pth')
 
     return train_loss_list, val_loss_list

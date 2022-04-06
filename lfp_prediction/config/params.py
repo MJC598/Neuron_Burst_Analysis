@@ -1,7 +1,3 @@
-import os, sys
-sys.path.append(os.path.split(sys.path[0])[0])
-from lfp_prediction.models import LFPNet
-
 PREVIOUS_TIME = 300
 LOOK_AHEAD = 100
 INPUT_FEATURES = 1
@@ -19,4 +15,3 @@ VAL_SAMPLES = 15000
 MODEL_NAME = 'LFPNetLSTM'
 OUTPUT = 'RawLFP'
 INPUT = 'RawLFP'
-RECURRENT_NET = False

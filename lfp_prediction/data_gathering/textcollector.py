@@ -2,14 +2,13 @@ from typing import Union, Tuple, List
 import numpy as np
 from scipy import signal
 
-from .datacollector import DataCollector
-from ..config import params
+from lfp_prediction.config import params
+from lfp_prediction.data_gathering.datacollector import DataCollector
 
 
-class NumpyCollector(DataCollector):
-    def __init__(self, datapath: str = None):
-        super().__init__(datapath)
-        self.labels = None
+class TextCollector(DataCollector):
+    def __init__(self, path: str = None):
+        super().__init__(path)
 
     def filter_data(self,
                     filter_type: str = None,
@@ -47,7 +46,7 @@ class NumpyCollector(DataCollector):
             else:  # Non Causal Full Filter and Raw Condition
                 # y1.append(norm_lfp[t:t+k,:])
                 # outputs.append((lfp[i + k:t + k, :] - self.global_mean) / self.global_std)
-                outputs.append((self.labels[i + k:t + k, :] - self.global_mean) / self.global_std)
+                outputs.append((lfp[i + k:t + k, :] - self.global_mean) / self.global_std)
             i += filter_rate  # params.PREVIOUS_TIME
             t += filter_rate  # params.PREVIOUS_TIME
 
@@ -59,12 +58,9 @@ class NumpyCollector(DataCollector):
         return inputs, outputs
 
     def get_data(self, threshold: int = 2) -> np.ndarray:
-        try:
-            self.data = np.load(self.datapath)['x'].reshape((-1, 1))
-            self.labels = np.load(self.datapath)['y'].reshape((-1, 1))
-        except FileNotFoundError:
-            print('File {} not found'.format(self.datapath))
-            raise
+        with open(self.datapath, 'r') as f:
+            data = f.readlines()
+        self.data = np.array(list(map(float, data))).reshape((-1, 1))
         self.global_std = np.std(self.data)
         self.global_mean = np.mean(self.data)
         self.get_threshold(self.data, scalar=threshold)

@@ -17,6 +17,7 @@ cffi==1.14.3
 chardet==3.0.4
 click==8.0.3
 cloudpickle==2.0.0
+colorednoise==1.1.1
 cycler==0.10.0
 dask==2022.3.0
 dataclasses==0.6
@@ -64,6 +65,7 @@ keras-nightly==2.5.0.dev2021032900
 Keras-Preprocessing==1.1.2
 kiwisolver==1.2.0
 libclang==12.0.0
+llvmlite==0.38.0
 locket==0.2.1
 loss-landscapes==3.0.6
 Markdown==3.3.2
@@ -78,11 +80,12 @@ nbclassic==0.2.7
 nbclient==0.5.1
 nbconvert==6.0.7
 nbformat==5.2.0
-nest-asyncio==1.4.1
+nest-asyncio==1.5.5
 networkx==2.5
 NEURON==7.8.2
-notebook==6.4.5
-numpy~=1.21.5
+notebook==6.4.10
+numba==0.55.1
+numpy==1.21.5
 oauthlib==3.1.0
 opt-einsum==3.3.0
 packaging==20.4
@@ -123,7 +126,7 @@ rsa==4.7.2
 scikit-image==0.17.2
 scikit-learn==0.23.2
 scipy==1.5.3
-Send2Trash==1.5.0
+Send2Trash==1.8.0
 six==1.15.0
 sklearn==0.0
 sniffio==1.2.0
@@ -162,5 +165,3 @@ Werkzeug==1.0.1
 widgetsnbextension==3.5.1
 wrapt==1.12.1
 zict==2.1.0
-
-numba~=0.55.1

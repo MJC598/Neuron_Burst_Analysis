@@ -13,9 +13,10 @@ class MatlabCollector(DataCollector):
     def filter_data(self,
                     filter_type: str = None,
                     freq_band: Union[np.ndarray, Tuple[int, int], List[int]] = None,
-                    filter_rate: int = 50) -> Tuple[np.ndarray, np.ndarray]:
+                    filter_rate: int = 50, only_bursts: bool = False) -> Tuple[np.ndarray, np.ndarray]:
         """
         Filter the data provided
+        :param only_bursts: only allow for burst parameters
         :param filter_type: String describing the type of filtering required.
                             Expects ['non-causal', 'causal', 'decomposition', 'raw']
         :param freq_band: Frequency range to filter, only uses 2 values, a lower and higher limit
@@ -43,10 +44,10 @@ class MatlabCollector(DataCollector):
                 lfp = sample
 
             while lfp.shape[0] > t + k:
-                # if self._oversample(sample[i:t + k, :]) == 0:  # done to include only bursts
-                #     i += filter_rate  # params.PREVIOUS_TIME
-                #     t += filter_rate  # params.PREVIOUS_TIME
-                #     continue
+                if only_bursts and self._oversample(sample[i:t + k, :]) == 0:  # done to include only bursts
+                    i += filter_rate  # params.PREVIOUS_TIME
+                    t += filter_rate  # params.PREVIOUS_TIME
+                    continue
                 burst_samples += self._oversample(sample[i:t + k, :])
                 inputs.append((sample[i:t, :] - self.global_mean) / self.global_std)
                 # x.append(lfp[i:t,:])

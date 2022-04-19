@@ -1,6 +1,7 @@
 from typing import Union, Tuple, List
 import numpy as np
 from scipy import signal
+import re
 
 from lfp_prediction.config import params
 from lfp_prediction.data_gathering.datacollector import DataCollector
@@ -52,15 +53,20 @@ class TextCollector(DataCollector):
 
         inputs = np.transpose(np.stack(inputs, axis=0), (0, 2, 1))
         outputs = np.transpose(np.stack(outputs, axis=0), (0, 2, 1))
-        print(burst_samples)
-        print(inputs.shape)
-        print(outputs.shape)
+        # print(burst_samples)
+        # print(inputs.shape)
+        # print(outputs.shape)
         return inputs, outputs
 
-    def get_data(self, threshold: int = 2) -> np.ndarray:
+    def get_data(self, threshold: int = 2, column: int = None) -> np.ndarray:
         with open(self.datapath, 'r') as f:
             data = f.readlines()
-        self.data = np.array(list(map(float, data))).reshape((-1, 1))
+        if column:
+            data = [re.findall(r'\d+', d)[column-1] for d in data]
+            self.data = np.array(list(map(float, data))).reshape((-1, 1))
+        else:
+            self.data = np.array(list(map(float, data))).reshape((-1, 1))
+
         self.global_std = np.std(self.data)
         self.global_mean = np.mean(self.data)
         self.get_threshold(self.data, scalar=threshold)

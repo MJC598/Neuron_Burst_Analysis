@@ -1,0 +1,26 @@
+model_params:
+  name: 'FullyConnected'
+  input_length: 300
+  output_length: 300
+
+logging_params:
+  save_dir: "logs/"
+  name: 'FullyConnected'
+
+exp_params:
+  manual_seed: 1111
+  retain_first_backpass: False
+  kld_weight: 8.0
+  LR: 0.005
+  weight_decay: 0.000095
+  unsupervised: False
+
+data_params:
+  data_path: "/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt"
+  train_batch_size: 8
+#  column: 2
+  filter_type: 'raw'
+
+trainer_params:
+  gpus: 1
+  max_epochs: 100

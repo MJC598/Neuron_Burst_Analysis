@@ -1,0 +1,24 @@
+model_params:
+  name: 'ConvNet'
+  in_channels: 1
+  output_length: 300
+
+logging_params:
+  save_dir: "logs/"
+  name: 'ConvNet'
+
+exp_params:
+  manual_seed: 1111
+  retain_first_backpass: False
+  kld_weight: 8.0
+  LR: 0.001
+  weight_decay: 0.0
+  unsupervised: False
+
+data_params:
+  data_path: "/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt"
+  train_batch_size: 8
+
+trainer_params:
+  gpus: 1
+  max_epochs: 10

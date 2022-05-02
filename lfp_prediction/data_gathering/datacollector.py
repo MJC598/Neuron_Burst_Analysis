@@ -3,6 +3,36 @@ from typing import Union, Tuple, List
 import numpy as np
 from scipy import signal
 from scipy.signal import hilbert, butter, filtfilt
+from scipy.stats import stats
+
+
+def get_norm_factor(full_lfp: np.ndarray,
+                    mu: np.ndarray,
+                    std: np.ndarray,
+                    hf_cutoff: float = 200.,
+                    nfft: int = 256,
+                    sample_rate: float = 1000.) -> np.ndarray:
+    lfp = (full_lfp - mu) / std
+    f, Pxx = signal.welch(lfp, fs=sample_rate, window='hamming', nperseg=nfft, scaling='spectrum', axis=0)
+    f = f.ravel()
+    Pxx = Pxx.ravel()
+
+    f_cutoff = max(np.argmax(Pxx), np.ndarray([1]))
+    Pmax = Pxx[f_cutoff]
+    idx = np.arange(f_cutoff, f.size)
+    result = stats.linregress(np.log(f[idx]), np.log(Pxx[idx]))
+    b = result.intercept
+    a = -result.slope
+
+    f_cutoff = np.exp((b - np.log(Pmax)) / a)
+    idx = f > f_cutoff
+    Pfit = Pxx.copy()
+    Pfit[idx] = np.exp(b) / f[idx] ** a
+    Pfit[~idx] = Pmax
+    idx = f > hf_cutoff
+    Pfit[idx] = np.min(Pfit[~idx])
+    norm_factor = np.square(Pmax / Pfit)
+    return norm_factor
 
 
 class DataCollector(ABC):
@@ -14,6 +44,7 @@ class DataCollector(ABC):
         self.threshold = None
         self.global_mean = None
         self.global_std = None
+        self.norm_factor = None
 
     @abstractmethod
     def filter_data(self,

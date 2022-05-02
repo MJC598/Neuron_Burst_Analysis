@@ -1,7 +1,6 @@
 # This model was built based on the base-vae proposed here: https://github.com/AntixK/PyTorch-VAE
 # Because we wanted to modify the network for our needs, it is duplicated and changed accordingly.
 
-import torch.nn as nn
 from abc import abstractmethod
 from torch import Tensor
 from typing import List, Any

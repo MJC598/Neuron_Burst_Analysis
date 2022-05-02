@@ -1,0 +1,33 @@
+model_params:
+  name: "LSTM"
+  in_features: 2
+  hidden_size: 10
+  out_length: 300
+  num_lstm_layers: 2
+  batch_first: True
+  dropout: 0.5
+  bidirectional: True
+  kld_weight: 0.0
+  LR: 0.005
+  weight_decay: 0.000095
+  scheduler_gamma: .99995
+
+logging_params:
+  save_dir: "logs/"
+  name: 'LSTM_FengDecomp'
+
+exp_params:
+  manual_seed: 1111
+
+data_params:
+  data_paths: ["/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt", "/home/matt/data/InVivoLFPs/FengData/FR_PN_ITN.txt"]
+  train_batch_size: 1
+  val_batch_size: 1
+  column: {/home/matt/data/InVivoLFPs/FengData/FR_PN_ITN.txt: 2}
+  filter_type: 'decomposition'
+  filter_rate: 4000
+  only_bursts: True
+
+trainer_params:
+  gpus: 1
+  max_epochs: 50

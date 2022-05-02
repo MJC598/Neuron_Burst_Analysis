@@ -1,7 +1,10 @@
 model_params:
   name: 'FullyConnected'
   input_length: 300
-  output_length: 300
+  output_length: 100
+  LR: 0.0001
+  weight_decay: 0.00095
+  scheduler_gamma: .9995
 
 logging_params:
   save_dir: "logs/"
@@ -9,17 +12,14 @@ logging_params:
 
 exp_params:
   manual_seed: 1111
-  retain_first_backpass: False
-  kld_weight: 8.0
-  LR: 0.005
-  weight_decay: 0.000095
-  unsupervised: False
 
 data_params:
-  data_path: "/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt"
-  train_batch_size: 8
-#  column: 2
-  filter_type: 'raw'
+  data_path: "/home/matt/data/InVivoLFPs/FengData/FR_PN_ITN.txt"
+#  "/home/matt/data/InVivoLFPs/SyntheticData/SyntheticData/FR_ITN_syn_noise.mat"
+  train_batch_size: 64
+  val_batch_size: 64
+  column: 2
+  filter_type: 'decomposition'
 
 trainer_params:
   gpus: 1

@@ -1,18 +1,18 @@
 model_params:
-  name: 'BetaVAE'
+  name: 'LSTMVAE'
   in_channels: 1
   in_length: 256
   latent_dim: 32
-  kld_weight: 16.
-  LR: 0.0005
-  beta: 4
+  kld_weight: .1
+  LR: 0.001
+  beta: 64
   loss_type: 'H'
   weight_decay: 0.00095
-  scheduler_gamma: .98
+  scheduler_gamma: .999995
 
 logging_params:
   save_dir: "logs/"
-  name: 'BetaVAEDilations'
+  name: 'LSTMVAE'
 
 exp_params:
   manual_seed: 1111
@@ -22,10 +22,10 @@ data_params:
 #  "/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt"
   train_batch_size: 16
   val_batch_size: 16
-  filter_type: 'non-causal'
+  filter_type: 'raw'
   filter_rate: 50  # stride for samples
   only_bursts: False
 
 trainer_params:
   gpus: 1
-  max_epochs: 50
+  max_epochs: 10

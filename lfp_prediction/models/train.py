@@ -40,7 +40,7 @@ def fit(model: nn.Module,
 
     # splitting the dataloaders to generalize code
     data_loaders = {"train": training_loader, "val": validation_loader}
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.0005) if 'optim' not in kwargs else kwargs.get('optim')
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.0001) if 'optim' not in kwargs else kwargs.get('optim')
 
     loss_func = nn.MSELoss() if 'loss_function' not in kwargs else kwargs.get('loss_function')
 

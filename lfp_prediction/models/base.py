@@ -1,7 +1,9 @@
 import torch.nn as nn
 from abc import abstractmethod
+
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor
-from typing import Any
+from typing import Any, Optional
 import pytorch_lightning as pl
 
 
@@ -15,4 +17,16 @@ class Base(pl.LightningModule):
 
     @abstractmethod
     def loss_function(self, *inputs: Any, **kwargs) -> Tensor:
+        pass
+
+    @abstractmethod
+    def training_step(self, *args, **kwargs) -> STEP_OUTPUT:
+        pass
+
+    @abstractmethod
+    def validation_step(self, *args, **kwargs) -> Optional[STEP_OUTPUT]:
+        pass
+
+    @abstractmethod
+    def configure_optimizers(self):
         pass

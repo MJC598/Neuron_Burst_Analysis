@@ -1,6 +1,3 @@
-# This model was built based on the beta-vae proposed here: https://github.com/AntixK/PyTorch-VAE
-# Because we wanted to modify the network for our needs, it is duplicated and changed accordingly.
-
 import torch
 from pytorch_lightning.utilities.types import STEP_OUTPUT
 from torch import Tensor, optim
@@ -12,13 +9,11 @@ from torch.nn import functional as F
 from typing import List, Optional, Union, Any
 
 
-class BetaVAE(BaseVAE):
+class LSTMVAE(BaseVAE):
     num_iter = 0  # Global static variable to keep track of iterations
 
-    def __init__(self,
-                 params: dict,
-                 **kwargs) -> None:
-        super(BetaVAE, self).__init__()
+    def __init__(self, params: dict, **kwargs):
+        super(LSTMVAE, self).__init__()
         self.save_hyperparameters(params)
 
         self.params = params
@@ -43,78 +38,36 @@ class BetaVAE(BaseVAE):
 
         self.curr_device = None
 
-        modules = []
-        if self.hidden_dims is None:
-            self.hidden_dims = [8, 16, 32, 64, 128]
+        self.enc_lstm = nn.LSTM(input_size=1,
+                                hidden_size=self.in_length,
+                                num_layers=1,
+                                batch_first=True,
+                                dropout=0.5,
+                                bidirectional=False)
 
-        self.strides = [1, 2, 1, 2, 1]
-        self.dilations = [15, 1, 15, 1, 15]
-        self.output_padding = [0, 1, 0, 1, 0]
+        self.enc_linear = nn.Linear(in_features=self.in_length, out_features=64)
+        self.fc_mu = nn.Linear(in_features=64, out_features=self.latent_dim)
+        self.fc_var = nn.Linear(in_features=64, out_features=self.latent_dim)
 
-        # Build Encoder
-        for i, h_dim in enumerate(self.hidden_dims):
-            modules.append(
-                nn.Sequential(
-                    nn.Conv1d(self.in_channels, out_channels=h_dim,
-                              kernel_size=3, stride=self.strides[i], dilation=self.dilations[i]),
-                    nn.BatchNorm1d(h_dim),
-                    nn.LeakyReLU())
-            )
-            self.in_channels = h_dim
+        self.dec_linear = nn.Linear(in_features=self.latent_dim, out_features=self.in_length)
 
-        self.encoder = nn.Sequential(*modules)
-        self.fc_mu = nn.Linear(self.hidden_dims[-1] * 10, self.latent_dim)
-        self.fc_var = nn.Linear(self.hidden_dims[-1] * 10, self.latent_dim)
-
-        # Build Decoder
-        modules = []
-
-        self.decoder_input = nn.Linear(self.latent_dim, self.hidden_dims[-1] * 10)
-
-        self.hidden_dims.reverse()
-
-        # These actually don't do anything, but it is included to help logic
-        self.strides.reverse()
-        self.dilations.reverse()
-        self.output_padding.reverse()
-
-        for i in range(len(self.hidden_dims) - 1):
-            modules.append(
-                nn.Sequential(
-                    nn.ConvTranspose1d(self.hidden_dims[i],
-                                       self.hidden_dims[i + 1],
-                                       kernel_size=3,
-                                       stride=self.strides[i],
-                                       output_padding=self.output_padding[i],
-                                       dilation=self.dilations[i]),
-                    nn.BatchNorm1d(self.hidden_dims[i + 1]),
-                    nn.LeakyReLU())
-            )
-
-        self.decoder = nn.Sequential(*modules)
-
-        self.final_layer = nn.Sequential(
-            nn.ConvTranspose1d(self.hidden_dims[-1],
-                               self.hidden_dims[-1],
-                               kernel_size=3,
-                               stride=self.strides[-1],
-                               output_padding=self.output_padding[-1],
-                               dilation=self.dilations[-1]),
-            nn.BatchNorm1d(self.hidden_dims[-1]),
-            nn.LeakyReLU(),
-            nn.Conv1d(self.hidden_dims[-1], out_channels=1,
-                      kernel_size=3, padding=1),
-            nn.Tanh())
+        self.dec_lstm = nn.LSTM(input_size=1,
+                                hidden_size=1,
+                                num_layers=1,
+                                batch_first=True,
+                                dropout=0.5,
+                                bidirectional=False)
 
     def encode(self, input: Tensor) -> List[Tensor]:
         """
-        Encodes the input by passing through the encoder network
-        and returns the latent codes.
-        :param input: (Tensor) Input tensor to encoder [N x C x H x W]
-        :return: (Tensor) List of latent codes
+        Encode the input and return a mean and log variance
+        :param input: Input Tensor of shape (N, H_in, L)
+        :return: List of Tensors, first is mean second is log variance. Both shapes (latent_dim, 1)
         """
-        result = self.encoder(input)  # (Batch x Channel x Length)
-        result = torch.flatten(result, start_dim=1)
+        input = input.view(-1, self.in_length, 1)  # Transform to fit to LSTM (N, L, H_in)
+        result, (_, _) = self.enc_lstm(input)
+        result = self.enc_linear(result[:, -1, :])
+        result = torch.squeeze(result)
 
         # Split the result into mu and var components
         # of the latent Gaussian distribution
@@ -124,10 +77,10 @@ class BetaVAE(BaseVAE):
         return [mu, log_var]
 
     def decode(self, z: Tensor) -> Tensor:
-        result = self.decoder_input(z)
-        result = result.view(-1, 128, 10)
-        result = self.decoder(result)
-        result = self.final_layer(result)
+        result = self.dec_linear(z)
+        result = result.view(-1, self.in_length, 1)
+        result, (_, _) = self.dec_lstm(result)
+        result = result.view(-1, 1, self.in_length)  # transform to match label (N, H_out, L)
         return result
 
     def reparameterize(self, mu: Tensor, logvar: Tensor) -> Tensor:
@@ -204,11 +157,6 @@ class BetaVAE(BaseVAE):
         return {'loss': loss,
                 'recon_loss': recons_loss,
                 'kld_loss': kld_loss}
-
-    # ,
-    # 'norm_factor': self.trainer.datamodule.norm_factor.to(self.curr_device),
-    # 'mu': mu,
-    # 'log_var': log_var
 
     def sample(self,
                num_samples: int,

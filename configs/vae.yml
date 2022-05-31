@@ -3,7 +3,7 @@ model_params:
   in_channels: 1
   in_length: 256
   latent_dim: 32
-  kld_weight: 16.
+  kld_weight: 0.5
   LR: 0.0005
   beta: 4
   loss_type: 'H'
@@ -12,20 +12,21 @@ model_params:
 
 logging_params:
   save_dir: "logs/"
-  name: 'BetaVAEDilations'
+  name: 'BetaVAE_InVivoRaw'
 
 exp_params:
   manual_seed: 1111
 
 data_params:
-  data_path: '/home/matt/data/InVivoLFPs/BLA_LFP_data/LFP_BLA_gamma.mat'
+  data_path: '/home/matt/data/InVivoLFPs/BLA_LFP_data/Part2SubjectHB15_AW.mat'
+#  '/home/matt/data/InVivoLFPs/BLA_LFP_data/LFP_BLA_gamma.mat'
 #  "/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt"
   train_batch_size: 16
   val_batch_size: 16
-  filter_type: 'non-causal'
+  filter_type: 'raw'
   filter_rate: 50  # stride for samples
   only_bursts: False
 
 trainer_params:
   gpus: 1
-  max_epochs: 50
+  max_epochs: 20

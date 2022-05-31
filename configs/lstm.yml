@@ -14,13 +14,14 @@ model_params:
 
 logging_params:
   save_dir: "logs/"
-  name: 'LSTM_FengDecomp'
+  name: 'LSTM_ModelDecomp'
 
 exp_params:
   manual_seed: 1111
 
 data_params:
   data_path: '/home/matt/data/InVivoLFPs/FengData/LFP_elec_combine.txt'
+#  '/home/matt/data/InVivoLFPs/BLA_LFP_data/Part2SubjectHB15_AW.mat'
   # '/home/matt/data/InVivoLFPs/FengData/FR_PN_ITN.txt'
   train_batch_size: 64
   val_batch_size: 64

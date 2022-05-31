@@ -22,7 +22,10 @@ class MatlabCollector(DataCollector):
         t = params.PREVIOUS_TIME + 2
         k = params.LOOK_AHEAD + 2
 
-        sample = self.data  # Currently, we assume any numpy array is a 1D time series set
+        if self.data.shape[0] < self.data.shape[-1]:
+            sample = self.data.T  # Currently, we assume any numpy array is a 1D time series set
+        else:
+            sample = self.data
 
         if filter_type == 'non-causal':
             lfp = signal.filtfilt(z, a, sample, axis=0)
@@ -76,11 +79,12 @@ class MatlabCollector(DataCollector):
         except FileNotFoundError:
             print('File {} not found'.format(self.datapath))
             raise
-        self.global_std = np.std(np.concatenate(np.concatenate(mat)))
-        self.global_mean = np.mean(np.concatenate(np.concatenate(mat)))
         self.data = np.concatenate(mat)
+        axis = 0 if self.data[0].shape[0] >= self.data[0].shape[-1] else -1
+        self.global_std = np.std(np.concatenate(self.data, axis=axis))
+        self.global_mean = np.mean(np.concatenate(self.data, axis=axis))
         self.get_threshold(scalar=2)
-        self.data = np.concatenate(self.data)
+        self.data = np.concatenate(self.data, axis=axis)
         self.norm_factor = get_norm_factor(self.data, self.global_mean, self.global_std)
         return self.data
 

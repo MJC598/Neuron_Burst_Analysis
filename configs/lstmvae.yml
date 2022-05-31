@@ -12,7 +12,7 @@ model_params:
 
 logging_params:
   save_dir: "logs/"
-  name: 'LSTMVAE'
+  name: 'LSTMVAE_ModelRaw'
 
 exp_params:
   manual_seed: 1111

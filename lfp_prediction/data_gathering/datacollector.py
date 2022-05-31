@@ -13,7 +13,8 @@ def get_norm_factor(full_lfp: np.ndarray,
                     nfft: int = 256,
                     sample_rate: float = 1000.) -> np.ndarray:
     lfp = (full_lfp - mu) / std
-    f, Pxx = signal.welch(lfp, fs=sample_rate, window='hamming', nperseg=nfft, scaling='spectrum', axis=0)
+    axis = 0 if lfp.shape[0] >= lfp.shape[-1] else -1
+    f, Pxx = signal.welch(lfp, fs=sample_rate, window='hamming', nperseg=nfft, scaling='spectrum', axis=axis)
     f = f.ravel()
     Pxx = Pxx.ravel()
 
@@ -60,8 +61,9 @@ class DataCollector(ABC):
         if data is None:
             data = self.data[0]
         z, a = butter(4, np.array([55, 85]), btype='bandpass', output='ba', fs=1000)
-        lfp = filtfilt(z, a, data, axis=0)
-        lfp_amplitude = abs(hilbert(lfp, axis=0))
+        axis = 0 if data.shape[0] >= data.shape[-1] else -1
+        lfp = filtfilt(z, a, data, axis=axis)
+        lfp_amplitude = abs(hilbert(lfp, axis=axis))
         self.threshold = np.mean(lfp_amplitude) + (scalar * np.std(lfp_amplitude))
         return -self.threshold, self.threshold
 
